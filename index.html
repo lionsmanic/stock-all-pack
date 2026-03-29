@@ -440,6 +440,35 @@ const NAMES={"2330.TW":"台積電","2303.TW":"聯電","5347.TWO":"世界先進",
 const PRESETS={"📝 自選觀察清單":{c:"2330.TW, 2382.TW, 2603.TW, TSLA, NVDA, PLTR",p:25},"🤖 台股-AI 伺服器/組裝":{c:"2317.TW, 2382.TW, 3231.TW, 6669.TW, 2356.TW, 2376.TW, 2357.TW, 2324.TW, 4938.TW, 2301.TW, 2308.TW, 2377.TW, 8210.TW, 2049.TW",p:25},"💡 台股-半導體 IC設計":{c:"2454.TW, 3034.TW, 2379.TW, 3035.TW, 3443.TW, 3661.TW, 3529.TW, 6531.TW, 6643.TW, 5269.TW, 6415.TW, 5274.TW, 6138.TW, 3227.TWO, 4966.TW",p:35},"🏭 台股-晶圓代工/設備":{c:"2330.TW, 2303.TW, 5347.TWO, 6770.TW, 3711.TW, 3131.TW, 3680.TW, 6196.TW, 6187.TWO, 5443.TWO, 6640.TWO, 6488.TW, 3532.TW",p:22},"💾 台股-記憶體/封測/面板":{c:"2408.TW, 2344.TW, 2337.TW, 3260.TWO, 8299.TWO, 2449.TW, 6239.TW, 2409.TW, 3481.TW, 6116.TW, 8069.TWO, 6176.TW",p:15},"❄️ 台股-散熱/PCB/被動":{c:"3017.TW, 3324.TWO, 3653.TW, 2421.TW, 3037.TW, 8046.TW, 3189.TW, 2368.TW, 2313.TW, 2383.TW, 6274.TW, 2327.TW",p:20},"🔌 台股-重電/綠能":{c:"1513.TW, 1519.TW, 1503.TW, 1504.TW, 1605.TW, 6806.TW, 9958.TW, 3708.TW, 6443.TW, 1609.TW",p:25},"🚢 台股-航運/航空/車":{c:"2603.TW, 2609.TW, 2615.TW, 2606.TW, 2637.TW, 2618.TW, 2610.TW, 2634.TW, 2201.TW, 2207.TW",p:12},"🛢️ 台股-塑化/鋼鐵/傳產":{c:"1301.TW, 1303.TW, 1326.TW, 6505.TW, 2002.TW, 2014.TW, 1101.TW, 1402.TW, 1476.TW, 9910.TW",p:15},"💰 台股-金融金控":{c:"2881.TW, 2882.TW, 2891.TW, 2886.TW, 2884.TW, 2892.TW, 5880.TW, 2885.TW, 2880.TW, 2883.TW",p:15},"🇺🇸 美股-科技七雄 Mag7":{c:"AAPL, MSFT, GOOG, AMZN, NVDA, TSLA, META",p:30},"🌌 美股-AI/大數據/資安":{c:"PLTR, SNOW, MDB, CRWD, PANW, FTNT, ZS, OKTA, NET, S",p:40},"☁️ 美股-SaaS/雲端":{c:"CRM, ADBE, ORCL, NOW, SAP, INTU, WDAY, TEAM, DDOG",p:35},"⚙️ 美股-半導體":{c:"AMD, INTC, QCOM, AVGO, MU, TXN, ASML, TSM, ARM, AMAT, LRCX, MRVL",p:25},"💊 美股-醫療":{c:"LLY, NVO, JNJ, PFE, MRK, UNH, ABBV, AMGN, ISRG, VRTX",p:25},"🛍️ 美股-消費/ETF":{c:"COST, WMT, PG, KO, PEP, MCD, SBUX, NKE, NFLX, DIS, SPY, QQQ, SOXX, TLT, GLD",p:22}};
 
 const ST={res:[],cache:{},busy:false,curTicker:null};
+/* ═══════════════════════════════════════════════════
+   GLOBAL FUNDAMENTAL DATA CACHE
+   TWSE / TPEX data is fetched ONCE and cached.
+   Looking up a stock is then instant.
+═══════════════════════════════════════════════════ */
+const GFC = {
+  twse: [],   // 上市 PE/PB/殖利率
+  tpex: [],   // 上櫃 PE/PB/殖利率
+  loaded: false,
+  loading: null,
+};
+
+async function ensureFundCache(){
+  if(GFC.loaded) return;
+  if(GFC.loading) return GFC.loading;
+  GFC.loading = (async()=>{
+    const [r1,r2] = await Promise.allSettled([
+      fetch('https://openapi.twse.com.tw/v1/exchangeReport/BWIBBU_ALL',  {signal:AbortSignal.timeout(10000)}),
+      fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_peratio_analysis', {signal:AbortSignal.timeout(10000)}),
+    ]);
+    if(r1.status==='fulfilled'&&r1.value.ok) GFC.twse=await r1.value.json();
+    if(r2.status==='fulfilled'&&r2.value.ok) GFC.tpex=await r2.value.json();
+    GFC.loaded=true;
+    console.log(`TWSE loaded: ${GFC.twse.length} stocks, TPEX: ${GFC.tpex.length} stocks`);
+  })();
+  return GFC.loading;
+}
+
+
 const $=id=>document.getElementById(id);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const isMob=()=>window.innerWidth<769;
@@ -523,107 +552,96 @@ async function fetchHistFull(t){
 // Legacy alias used by main chart tab
 async function fetchHist(t){return fetchHistFull(t);}
 async function fetchFund(t){
-  const isTW = t.includes('.TW') || t.includes('.TWO');
-  const isOTC= t.includes('.TWO');
+  const isTW  = t.includes('.TW') || t.includes('.TWO');
+  const isOTC = t.includes('.TWO');
+  const code  = t.replace('.TW','').replace('.TWO','');
 
-  /* ═══════════════════════════════════════════════
-     TAIWAN STOCKS — TWSE / TPEX official open API
-     These endpoints are CORS-friendly, no proxy needed
-  ═══════════════════════════════════════════════ */
+  /* ── TAIWAN STOCKS ─────────────────────────────
+     Source: TWSE / TPEX official open API (CORS ✓)
+     Data cached globally — lookup is instant
+  ─────────────────────────────────────────────── */
   if(isTW){
-    const code = t.replace('.TW','').replace('.TWO','');
-    let pe=null, pb=null, eps=null, yield_=null, quarterly=[];
+    // Ensure cache is loaded (no-op if already done)
+    await ensureFundCache();
 
-    // 1. PE ratio & PBR from TWSE BWIBBU (上市) or TPEX (上櫃)
-    try{
-      // Try TWSE first, fallback to TPEX
-      const twseUrl = 'https://openapi.twse.com.tw/v1/exchangeReport/BWIBBU_ALL';
-      const tpexUrl = 'https://www.tpex.org.tw/openapi/v1/tpex_mainboard_peratio_analysis';
-      const urls = isOTC ? [tpexUrl, twseUrl] : [twseUrl, tpexUrl];
-      for(const url of urls){
-        try{
-          const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
-          if(!r.ok) continue;
-          const arr = await r.json();
-          // TWSE format: {Code, PEratio, DividendYield, PBratio}
-          // TPEX format: {SecuritiesCompanyCode, PERatio, PBRatio, DividendYield}
-          const item = arr.find(s =>
-            (s.Code===code)||(s.SecuritiesCompanyCode===code)
-          );
-          if(item){
-            pe    = parseFloat(item.PEratio||item.PERatio)||null;
-            pb    = parseFloat(item.PBratio||item.PBRatio)||null;
-            yield_= parseFloat(item.DividendYield)||null;
-            // Approximate EPS from price & PE (will be updated below)
-            break;
-          }
-        }catch{}
-      }
-    }catch{}
+    let pe=null, pb=null, yld=null;
 
-    // 2. EPS from TWSE monthly earnings report
+    // Search TWSE (上市) then TPEX (上櫃)
+    const twseItem = GFC.twse.find(s=>s.Code===code);
+    const tpexItem = GFC.tpex.find(s=>
+      s.SecuritiesCompanyCode===code ||
+      s['SecuritiesCompanyCode']===code
+    );
+    const item = twseItem || tpexItem;
+
+    if(item){
+      pe  = parseFloat(item.PEratio  || item.PERatio  || 0) || null;
+      pb  = parseFloat(item.PBratio  || item.PBRatio  || 0) || null;
+      yld = parseFloat(item.DividendYield || item.DividendYield || 0) || null;
+    }
+
+    // EPS: try TWSE opendata (最新年度財報)
+    let eps = null;
     try{
-      const url=`https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_AVG_ALL`;
-      // This gives avg price; for EPS we use a different endpoint
-      // Use TWSE fundamental data: v1/opendata/t187ap03_L (listed companies EPS)
-      const r=await fetch(`https://openapi.twse.com.tw/v1/opendata/t187ap03_L`,{signal:AbortSignal.timeout(8000)});
+      const epsUrl='https://openapi.twse.com.tw/v1/opendata/t187ap03_L';
+      const r=await fetch(epsUrl,{signal:AbortSignal.timeout(8000)});
       if(r.ok){
         const arr=await r.json();
-        const item=arr.find(s=>s['公司代號']===code||s.Code===code||s['股票代號']===code);
-        if(item){
-          // Fields vary; look for EPS-like key
-          const epsVal=item['基本每股盈餘（元）']||item['EPS']||item['每股盈餘']||null;
-          if(epsVal) eps=parseFloat(epsVal)||null;
+        const row=arr.find(s=>s['公司代號']===code||s.Code===code);
+        if(row){
+          const raw=row['基本每股盈餘（元）']||row['EPS']||row['每股盈餘（元）']||null;
+          if(raw) eps=parseFloat(raw)||null;
         }
       }
     }catch{}
 
-    // 3. If still no EPS but we have PE and can get price, estimate EPS
-    // (Will be done outside using current price / PE)
-
-    return {eps, pe, pb, rev:0, roe:null, debtEq:null, grossMargin:null, quarterly, dividendYield:yield_};
+    return {eps, pe, pb, rev:0, roe:null, debtEq:null, grossMargin:null, quarterly:[], dividendYield:yld};
   }
 
-  /* ═══════════════════════════════════════════════
-     US STOCKS — Yahoo Finance v7/quote
-     Direct call first, then corsproxy
-  ═══════════════════════════════════════════════ */
+  /* ── US STOCKS ──────────────────────────────────
+     Yahoo Finance v7/quote — often allows direct
+     cross-origin from browsers (no proxy needed)
+  ─────────────────────────────────────────────── */
   let base={eps:null,pe:null,pb:null,rev:0,roe:null,debtEq:null,grossMargin:null,quarterly:[]};
-  const yfUrl=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}&fields=trailingPE,priceToBook,epsTrailingTwelveMonths,revenueGrowth,returnOnEquity,debtToEquity,grossMargins`;
-  let yfData=null;
-  // Try direct
-  try{const r=await fetch(yfUrl,{signal:AbortSignal.timeout(6000)});if(r.ok)yfData=await r.json();}catch{}
-  // Try proxy
-  if(!yfData){
-    try{const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(yfUrl)}`,{signal:AbortSignal.timeout(10000)});if(r.ok)yfData=JSON.parse(await r.text());}catch{}
+
+  // Try 3 approaches in order
+  const yf7 = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}`;
+  const proxies = [
+    yf7,                                                             // direct (no proxy)
+    `https://corsproxy.io/?${encodeURIComponent(yf7)}`,             // corsproxy
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(yf7)}`,// allorigins
+  ];
+
+  for(const url of proxies){
+    try{
+      const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+      if(!r.ok) continue;
+      const d=JSON.parse(await r.text());
+      const row=d?.quoteResponse?.result?.[0];
+      if(!row) continue;
+      base.eps = row.epsTrailingTwelveMonths ?? null;
+      base.pe  = row.trailingPE ?? null;
+      base.pb  = row.priceToBook ?? null;
+      base.rev = row.revenueGrowth ?? 0;
+      base.roe = row.returnOnEquity ?? null;
+      base.debtEq = row.debtToEquity ?? null;
+      base.grossMargin = row.grossMargins ?? null;
+      if(base.pe || base.eps) break;  // got meaningful data, stop
+    }catch{}
   }
-  if(yfData){
-    const r=yfData.quoteResponse?.result?.[0];
-    if(r){
-      base.eps=r.epsTrailingTwelveMonths??null;
-      base.pe=r.trailingPE??null;
-      base.pb=r.priceToBook??null;
-      base.rev=r.revenueGrowth??0;
-      base.roe=r.returnOnEquity??null;
-      base.debtEq=r.debtToEquity??null;
-      base.grossMargin=r.grossMargins??null;
-    }
+
+  // Quarterly EPS via quoteSummary (for chart) — best effort
+  const qsUrl=`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=earnings`;
+  for(const url of [qsUrl, `https://corsproxy.io/?${encodeURIComponent(qsUrl)}`]){
+    try{
+      const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+      if(!r.ok) continue;
+      const d=JSON.parse(await r.text());
+      base.quarterly=d?.quoteSummary?.result?.[0]?.earnings?.earningsChart?.quarterly||[];
+      if(base.quarterly.length) break;
+    }catch{}
   }
-  // Also try quoteSummary for quarterly EPS
-  try{
-    const qsUrl=`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=defaultKeyStatistics,financialData,earnings`;
-    let qsData=null;
-    try{const r=await fetch(qsUrl,{signal:AbortSignal.timeout(6000)});if(r.ok)qsData=await r.json();}catch{}
-    if(!qsData){const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(qsUrl)}`,{signal:AbortSignal.timeout(10000)});if(r.ok)qsData=JSON.parse(await r.text());}
-    const rr=qsData?.quoteSummary?.result?.[0];
-    if(rr){
-      const g=v=>v?.raw??null;
-      if(base.eps==null) base.eps=g(rr.defaultKeyStatistics?.trailingEps);
-      if(base.roe==null) base.roe=g(rr.financialData?.returnOnEquity);
-      if(base.grossMargin==null) base.grossMargin=g(rr.financialData?.grossMargins);
-      base.quarterly=rr.earnings?.earningsChart?.quarterly||[];
-    }
-  }catch{}
+
   return base;
 }
 async function fetchYNews(t){
@@ -698,6 +716,8 @@ async function analyseOne(t,tpe){
 
 async function runAnalysis(){
   if(ST.busy)return;ST.busy=true;closeDetail();
+  // Pre-load TWSE/TPEX fundamental data in background (ready by the time we need it)
+  ensureFundCache();
   const tks=$('tks-inp').value.split(',').map(t=>t.trim().toUpperCase()).filter(Boolean);
   const tpe=+$('pe-range').value;
   const btn=$('run-btn');btn.disabled=true;btn.textContent='⏳ 分析中...';
@@ -749,36 +769,50 @@ window.addEventListener('resize',()=>{if(ST.res.length)renderAll(ST.res);});
 /* ─ STOCK DETAIL PANEL ─ */
 let _detailOpening=false;
 function renderMetrics(f,row){
-  const fmtPct=v=>v!=null?`${(v*100).toFixed(1)}%`:'—';
-  // If EPS is null but we have PE and price, estimate: EPS ≈ Price / PE
-  let eps=f.eps;
-  if(eps==null && f.pe && f.pe>0 && row.price>0) eps=row.price/f.pe;
-  // Also re-compute fair price if we now have EPS
-  if(eps && eps>0 && row.fair==='—'){
-    const tpe=+($('pe-range')?.value||25);
-    row.fair=(eps*tpe).toFixed(2);
+  const fmtPct = v => v!=null ? `${(v*100).toFixed(1)}%` : '—';
+  const fmtNum = (v,d=2) => v!=null ? v.toFixed(d) : '—';
+
+  // Derive EPS from Price ÷ PE if missing
+  let eps = f.eps;
+  if(eps==null && f.pe && f.pe>0 && row.price>0){
+    eps = row.price / f.pe;
   }
-  // Dividend yield for TW stocks
-  const extraMetric = f.dividendYield!=null
-    ? ['殖利率', fmtPct(f.dividendYield)]
-    : ['毛利率', fmtPct(f.grossMargin)];
-  $('dp-metrics').innerHTML=[
-    ['PE 本益比',f.pe!=null?f.pe.toFixed(1)+'x':'—'],
-    ['PB 股價淨值',f.pb!=null?f.pb.toFixed(2)+'x':'—'],
-    ['EPS',eps!=null?eps.toFixed(2):'—'],
-    ['營收成長',fmtPct(f.rev||null)],
-    extraMetric,
-    ['ROE',fmtPct(f.roe)],
-    ['合理估值',row.fair!=='—'?`$${row.fair}`:'—'],
-    ['評分',`${row.score.toFixed(1)} 分`],
-  ].map(([l,v])=>`<div class="dp-m"><span class="dp-mv">${v}</span><span class="dp-ml">${l}</span></div>`).join('');
+
+  // Recompute fair price now that we (may) have EPS
+  let fair = row.fair;
+  if(fair==='—' && eps && eps>0){
+    const tpe = +($('pe-range')?.value || 25);
+    fair = (eps * tpe).toFixed(2);
+    row.fair = fair;
+  }
+
+  // For TW stocks show Dividend Yield; for US show Gross Margin
+  const extraLabel = f.dividendYield!=null ? '殖利率' : '毛利率';
+  const extraVal   = f.dividendYield!=null ? fmtPct(f.dividendYield) : fmtPct(f.grossMargin);
+
+  const metrics = [
+    ['PE 本益比',    f.pe!=null  ? f.pe.toFixed(1)+'x' : '—'],
+    ['PB 股價淨值',  f.pb!=null  ? f.pb.toFixed(2)+'x' : '—'],
+    ['EPS',          eps!=null   ? eps.toFixed(2) : '—'],
+    ['營收成長',     f.rev       ? fmtPct(f.rev) : '—'],
+    [extraLabel,     extraVal],
+    ['ROE',          fmtPct(f.roe)],
+    ['合理估值',     fair!=='—'  ? `$${fair}` : '—'],
+    ['評分',         `${row.score.toFixed(1)} 分`],
+  ];
+
+  $('dp-metrics').innerHTML = metrics
+    .map(([l,v])=>`<div class="dp-m"><span class="dp-mv">${v}</span><span class="dp-ml">${l}</span></div>`)
+    .join('');
+
+  // Side table (signals + fundamentals)
   $('dp-fund-table').innerHTML=[
-    ['今日訊號',`<span class="${sCls(row.sig0)}">${row.sig0}</span>`],
-    ['昨日訊號',`<span class="${sCls(row.sig1)}">${row.sig1}</span>`],
-    ['前日訊號',`<span class="${sCls(row.sig2)}">${row.sig2}</span>`],
-    ['T-2 驗證',`<span class="s-v">${row.val}</span>`],
-    ['策略理由',row.why||'—'],
-    ['負債/淨值',f.debtEq!=null?`<span class="${f.debtEq>2?'fv-dn':'fv-up'}">${f.debtEq.toFixed(1)}%</span>`:'—'],
+    ['今日訊號', `<span class="${sCls(row.sig0)}">${row.sig0}</span>`],
+    ['昨日訊號', `<span class="${sCls(row.sig1)}">${row.sig1}</span>`],
+    ['前日訊號', `<span class="${sCls(row.sig2)}">${row.sig2}</span>`],
+    ['T-2 驗證', `<span class="s-v">${row.val}</span>`],
+    ['策略理由', row.why||'—'],
+    ['負債/淨值', f.debtEq!=null ? f.debtEq.toFixed(1)+'%' : '—'],
   ].map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
 }
 
