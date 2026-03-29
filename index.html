@@ -523,79 +523,107 @@ async function fetchHistFull(t){
 // Legacy alias used by main chart tab
 async function fetchHist(t){return fetchHistFull(t);}
 async function fetchFund(t){
-  let base={eps:null,pe:null,pb:null,rev:0,roe:null,debtEq:null,grossMargin:null,quarterly:[]};
+  const isTW = t.includes('.TW') || t.includes('.TWO');
+  const isOTC= t.includes('.TWO');
 
-  // ── Strategy: try 3 URL patterns, pick first that returns useful data ──
-  const urls=[
-    // v11 (newest Yahoo endpoint, often bypasses CORS)
-    `https://query1.finance.yahoo.com/v11/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail%2CdefaultKeyStatistics%2CfinancialData%2Cearnings`,
-    // v10 on query2
-    `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail%2CdefaultKeyStatistics%2CfinancialData%2Cearnings`,
-    // v10 on query1
-    `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail%2CdefaultKeyStatistics%2CfinancialData%2Cearnings`,
-  ];
+  /* ═══════════════════════════════════════════════
+     TAIWAN STOCKS — TWSE / TPEX official open API
+     These endpoints are CORS-friendly, no proxy needed
+  ═══════════════════════════════════════════════ */
+  if(isTW){
+    const code = t.replace('.TW','').replace('.TWO','');
+    let pe=null, pb=null, eps=null, yield_=null, quarterly=[];
 
-  for(const url of urls){
+    // 1. PE ratio & PBR from TWSE BWIBBU (上市) or TPEX (上櫃)
     try{
-      // Try direct (no proxy) first — sometimes works in browser
-      let d=null;
-      try{
-        const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
-        if(r.ok) d=await r.json();
-      }catch{}
-      // If direct failed, try via corsproxy
-      if(!d){
+      // Try TWSE first, fallback to TPEX
+      const twseUrl = 'https://openapi.twse.com.tw/v1/exchangeReport/BWIBBU_ALL';
+      const tpexUrl = 'https://www.tpex.org.tw/openapi/v1/tpex_mainboard_peratio_analysis';
+      const urls = isOTC ? [tpexUrl, twseUrl] : [twseUrl, tpexUrl];
+      for(const url of urls){
         try{
-          const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`,{signal:AbortSignal.timeout(8000)});
-          if(r.ok) d=JSON.parse(await r.text());
+          const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
+          if(!r.ok) continue;
+          const arr = await r.json();
+          // TWSE format: {Code, PEratio, DividendYield, PBratio}
+          // TPEX format: {SecuritiesCompanyCode, PERatio, PBRatio, DividendYield}
+          const item = arr.find(s =>
+            (s.Code===code)||(s.SecuritiesCompanyCode===code)
+          );
+          if(item){
+            pe    = parseFloat(item.PEratio||item.PERatio)||null;
+            pb    = parseFloat(item.PBratio||item.PBRatio)||null;
+            yield_= parseFloat(item.DividendYield)||null;
+            // Approximate EPS from price & PE (will be updated below)
+            break;
+          }
         }catch{}
       }
-      if(!d) continue;
+    }catch{}
 
-      const result=d.quoteSummary?.result?.[0];
-      if(!result) continue;
-
-      const sd=result.summaryDetail||{};
-      const ks=result.defaultKeyStatistics||{};
-      const fd=result.financialData||{};
-      const eq=result.earnings?.earningsChart?.quarterly||[];
-
-      const g=v=>v?.raw??null;
-
-      // PE: try multiple locations
-      const pe=g(sd.trailingPE)||g(ks.forwardPE)||null;
-      const eps=g(ks.trailingEps)||null;
-      const pb=g(sd.priceToBook)||null;
-      const rev=g(fd.revenueGrowth)??0;
-      const roe=g(fd.returnOnEquity)||null;
-      const debtEq=g(fd.debtToEquity)||null;
-      const gm=g(fd.grossMargins)||null;
-
-      // Accept if we got at least one meaningful metric
-      if(pe||eps||pb||roe||gm){
-        return{eps,pe,pb,rev,roe,debtEq,grossMargin:gm,quarterly:eq};
+    // 2. EPS from TWSE monthly earnings report
+    try{
+      const url=`https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_AVG_ALL`;
+      // This gives avg price; for EPS we use a different endpoint
+      // Use TWSE fundamental data: v1/opendata/t187ap03_L (listed companies EPS)
+      const r=await fetch(`https://openapi.twse.com.tw/v1/opendata/t187ap03_L`,{signal:AbortSignal.timeout(8000)});
+      if(r.ok){
+        const arr=await r.json();
+        const item=arr.find(s=>s['公司代號']===code||s.Code===code||s['股票代號']===code);
+        if(item){
+          // Fields vary; look for EPS-like key
+          const epsVal=item['基本每股盈餘（元）']||item['EPS']||item['每股盈餘']||null;
+          if(epsVal) eps=parseFloat(epsVal)||null;
+        }
       }
-      // Even if no ratios, still return what we have (may have quarterly)
-      base={eps,pe,pb,rev,roe,debtEq,grossMargin:gm,quarterly:eq};
-    }catch(e){console.log('fetchFund attempt failed:',e.message);}
+    }catch{}
+
+    // 3. If still no EPS but we have PE and can get price, estimate EPS
+    // (Will be done outside using current price / PE)
+
+    return {eps, pe, pb, rev:0, roe:null, debtEq:null, grossMargin:null, quarterly, dividendYield:yield_};
   }
 
-  // Last resort: v7/quote for basic price-derived metrics
-  try{
-    const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}`;
-    let d=null;
-    try{const r=await fetch(url,{signal:AbortSignal.timeout(5000)});if(r.ok)d=await r.json();}catch{}
-    if(!d){const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`,{signal:AbortSignal.timeout(8000)});if(r.ok)d=JSON.parse(await r.text());}
-    const r=d?.quoteResponse?.result?.[0];
+  /* ═══════════════════════════════════════════════
+     US STOCKS — Yahoo Finance v7/quote
+     Direct call first, then corsproxy
+  ═══════════════════════════════════════════════ */
+  let base={eps:null,pe:null,pb:null,rev:0,roe:null,debtEq:null,grossMargin:null,quarterly:[]};
+  const yfUrl=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}&fields=trailingPE,priceToBook,epsTrailingTwelveMonths,revenueGrowth,returnOnEquity,debtToEquity,grossMargins`;
+  let yfData=null;
+  // Try direct
+  try{const r=await fetch(yfUrl,{signal:AbortSignal.timeout(6000)});if(r.ok)yfData=await r.json();}catch{}
+  // Try proxy
+  if(!yfData){
+    try{const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(yfUrl)}`,{signal:AbortSignal.timeout(10000)});if(r.ok)yfData=JSON.parse(await r.text());}catch{}
+  }
+  if(yfData){
+    const r=yfData.quoteResponse?.result?.[0];
     if(r){
-      if(base.eps==null) base.eps=r.epsTrailingTwelveMonths??null;
-      if(base.pe==null)  base.pe=r.trailingPE??null;
-      if(base.pb==null)  base.pb=r.priceToBook??null;
-      if(!base.rev)      base.rev=r.revenueGrowth??0;
-      if(base.grossMargin==null) base.grossMargin=r.grossMargins??null;
+      base.eps=r.epsTrailingTwelveMonths??null;
+      base.pe=r.trailingPE??null;
+      base.pb=r.priceToBook??null;
+      base.rev=r.revenueGrowth??0;
+      base.roe=r.returnOnEquity??null;
+      base.debtEq=r.debtToEquity??null;
+      base.grossMargin=r.grossMargins??null;
+    }
+  }
+  // Also try quoteSummary for quarterly EPS
+  try{
+    const qsUrl=`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=defaultKeyStatistics,financialData,earnings`;
+    let qsData=null;
+    try{const r=await fetch(qsUrl,{signal:AbortSignal.timeout(6000)});if(r.ok)qsData=await r.json();}catch{}
+    if(!qsData){const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(qsUrl)}`,{signal:AbortSignal.timeout(10000)});if(r.ok)qsData=JSON.parse(await r.text());}
+    const rr=qsData?.quoteSummary?.result?.[0];
+    if(rr){
+      const g=v=>v?.raw??null;
+      if(base.eps==null) base.eps=g(rr.defaultKeyStatistics?.trailingEps);
+      if(base.roe==null) base.roe=g(rr.financialData?.returnOnEquity);
+      if(base.grossMargin==null) base.grossMargin=g(rr.financialData?.grossMargins);
+      base.quarterly=rr.earnings?.earningsChart?.quarterly||[];
     }
   }catch{}
-
   return base;
 }
 async function fetchYNews(t){
@@ -722,14 +750,26 @@ window.addEventListener('resize',()=>{if(ST.res.length)renderAll(ST.res);});
 let _detailOpening=false;
 function renderMetrics(f,row){
   const fmtPct=v=>v!=null?`${(v*100).toFixed(1)}%`:'—';
+  // If EPS is null but we have PE and price, estimate: EPS ≈ Price / PE
+  let eps=f.eps;
+  if(eps==null && f.pe && f.pe>0 && row.price>0) eps=row.price/f.pe;
+  // Also re-compute fair price if we now have EPS
+  if(eps && eps>0 && row.fair==='—'){
+    const tpe=+($('pe-range')?.value||25);
+    row.fair=(eps*tpe).toFixed(2);
+  }
+  // Dividend yield for TW stocks
+  const extraMetric = f.dividendYield!=null
+    ? ['殖利率', fmtPct(f.dividendYield)]
+    : ['毛利率', fmtPct(f.grossMargin)];
   $('dp-metrics').innerHTML=[
     ['PE 本益比',f.pe!=null?f.pe.toFixed(1)+'x':'—'],
     ['PB 股價淨值',f.pb!=null?f.pb.toFixed(2)+'x':'—'],
-    ['EPS',f.eps!=null?f.eps.toFixed(2):'—'],
-    ['營收成長',fmtPct(f.rev)],
-    ['毛利率',fmtPct(f.grossMargin)],
+    ['EPS',eps!=null?eps.toFixed(2):'—'],
+    ['營收成長',fmtPct(f.rev||null)],
+    extraMetric,
     ['ROE',fmtPct(f.roe)],
-    ['合理估值',`$${row.fair}`],
+    ['合理估值',row.fair!=='—'?`$${row.fair}`:'—'],
     ['評分',`${row.score.toFixed(1)} 分`],
   ].map(([l,v])=>`<div class="dp-m"><span class="dp-mv">${v}</span><span class="dp-ml">${l}</span></div>`).join('');
   $('dp-fund-table').innerHTML=[
