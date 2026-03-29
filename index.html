@@ -6,407 +6,1176 @@
 <title>AI 全球股市戰情室</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0f0d0b;--bg2:#181410;--bg3:#211c16;--bg4:#2c251c;--bg5:#362d22;
-  --brd:#3d3228;--brd2:#503f2f;--brd3:#6b5640;
-  --gold:#c8923a;--gold2:#e8a84a;--gold3:#f5c96a;--amber:#d4771e;
-  --cr:#ede3d5;--cr2:#c5b5a0;--cr3:#8a7869;--cr4:#5a4e44;
-  --gn:#72c78e;--gn2:#4aa86a;--rd:#d96060;--rd2:#b84848;
-  --bl:#7aaed4;--tl:#70bfb0;
-  --sw:290px;--r:8px;--r2:5px;
-  --fd:'Cormorant Garamond',serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;
+/* ═══════════════════════════════
+   WARM PARCHMENT DARK PALETTE
+═══════════════════════════════ */
+:root {
+  /* Backgrounds — warm layered browns */
+  --bg0: #16110c;   /* deepest bg */
+  --bg1: #1e1710;   /* main bg */
+  --bg2: #271f16;   /* sidebar / panels */
+  --bg3: #31261a;   /* cards */
+  --bg4: #3e3024;   /* hover states */
+  --bg5: #4a3a2c;   /* active / selected */
+
+  /* Borders */
+  --bdr1: #3d2f1e;
+  --bdr2: #5a4532;
+  --bdr3: #7a6045;
+
+  /* Gold / Amber accents */
+  --gold:  #d4972a;
+  --gold2: #e8b040;
+  --gold3: #f5cc68;
+  --amber: #c97d1a;
+
+  /* Text — warm ivory tones */
+  --tx1: #f0e6d6;   /* primary */
+  --tx2: #cbb99a;   /* secondary */
+  --tx3: #9a8268;   /* muted */
+  --tx4: #5e4e3c;   /* very muted */
+
+  /* Signal colors — warm versions */
+  --green:  #5dba80;
+  --green2: #3d9a60;
+  --red:    #d06060;
+  --red2:   #a84848;
+  --blue:   #7aadcc;
+  --teal:   #5ab8a8;
+
+  /* Layout */
+  --sw: 288px;
+  --r:  10px;
+  --r2: 6px;
+
+  /* Typography */
+  --ff-title: 'Noto Serif TC', serif;
+  --ff-body:  'DM Sans', sans-serif;
+  --ff-mono:  'JetBrains Mono', monospace;
+
+  /* Transitions */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{font-family:var(--fb);background:var(--bg);color:var(--cr);font-size:15px;line-height:1.6;display:flex;height:100dvh;overflow:hidden}
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--bg2)}
-::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:3px}
 
-/* OVERLAY */
-#ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);z-index:40}
-#ov.on{display:block}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
 
-/* SIDEBAR */
-#sb{width:var(--sw);min-width:var(--sw);background:var(--bg2);border-right:1px solid var(--brd);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;z-index:50;transition:transform .28s cubic-bezier(.4,0,.2,1);flex-shrink:0}
-.sb-h{padding:22px 20px 16px;background:linear-gradient(160deg,#211a10,#150f09);border-bottom:1px solid var(--brd);position:relative}
-.sb-ht{font-family:var(--fd);font-size:22px;font-weight:700;color:var(--gold2);line-height:1.15}
-.sb-hs{font-family:var(--fm);font-size:10px;color:var(--cr3);letter-spacing:.14em;text-transform:uppercase;margin-top:4px}
-.sb-x{display:none;position:absolute;right:14px;top:50%;transform:translateY(-50%);background:var(--bg4);border:1px solid var(--brd);border-radius:50%;color:var(--cr2);width:30px;height:30px;font-size:16px;cursor:pointer;align-items:center;justify-content:center}
-.sb-bd{padding:16px;display:flex;flex-direction:column;gap:16px}
-
-/* FORM */
-.fg{display:flex;flex-direction:column;gap:5px}
-.fl{font-size:11px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--cr3)}
-.fh{font-size:11px;color:var(--cr3);margin-top:2px}
-.fh a{color:var(--gold);text-decoration:none}
-.fh a:hover{color:var(--gold2);text-decoration:underline}
-.opt{font-weight:400;color:var(--cr4)}
-.ks{display:none;font-size:10px;color:var(--gn);margin-left:6px}
-.iw{position:relative}
-.iw .eb{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--cr3);font-size:14px;padding:2px;transition:color .15s}
-.iw .eb:hover{color:var(--gold)}
-input[type=password],input[type=text],textarea,select{width:100%;background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r2);color:var(--cr);font-family:var(--fb);font-size:14px;padding:9px 12px;outline:none;transition:border-color .18s,box-shadow .18s;-webkit-appearance:none;appearance:none}
-input[type=password]{padding-right:36px}
-input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,146,58,.12)}
-select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a7869' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
-textarea{resize:vertical;font-family:var(--fm);font-size:12px;line-height:1.6}
-.pe-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
-.pe-chip{font-family:var(--fm);font-size:14px;font-weight:600;color:var(--gold2);background:rgba(200,146,58,.1);border:1px solid rgba(200,146,58,.25);border-radius:4px;padding:1px 9px}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;background:var(--brd2);border-radius:2px;outline:none;cursor:pointer;padding:0}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--gold2);border:2px solid var(--bg);border-radius:50%;cursor:pointer;box-shadow:0 0 6px rgba(232,168,74,.4);transition:transform .15s}
-input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
-.sdiv{height:1px;background:var(--brd)}
-
-/* RUN BUTTON */
-.btn-run{background:linear-gradient(135deg,#c07230,#8a4f18);color:#fff;border:none;border-radius:var(--r);font-family:var(--fb);font-size:14px;font-weight:700;letter-spacing:.06em;padding:12px 16px;cursor:pointer;width:100%;text-transform:uppercase;transition:all .18s;box-shadow:0 3px 14px rgba(192,114,48,.35);position:relative;overflow:hidden}
-.btn-run::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.08),transparent);pointer-events:none}
-.btn-run:hover:not(:disabled){background:linear-gradient(135deg,#d4813a,#9a5f22);box-shadow:0 4px 20px rgba(192,114,48,.5);transform:translateY(-1px)}
-.btn-run:disabled{opacity:.5;cursor:not-allowed;transform:none}
-
-/* PROGRESS */
-#pw{display:none;flex-direction:column;gap:8px;background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);padding:12px 14px}
-.pl{font-size:12px;color:var(--cr2);font-family:var(--fm)}
-.po{height:3px;background:var(--brd2);border-radius:2px;overflow:hidden}
-.pi{height:100%;width:0%;background:linear-gradient(90deg,var(--amber),var(--gold2),var(--gold3));border-radius:2px;transition:width .3s ease}
-.sn{font-size:12px;color:var(--cr3);background:rgba(200,146,58,.06);border:1px solid rgba(200,146,58,.15);border-radius:var(--r);padding:10px 12px;line-height:1.65}
-
-/* MAIN */
-#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-
-/* TOPNAV */
-#tn{background:var(--bg2);border-bottom:1px solid var(--brd);padding:0 20px;display:flex;align-items:center;height:52px;flex-shrink:0}
-.hbg{display:none;background:none;border:none;color:var(--cr2);font-size:20px;cursor:pointer;padding:6px 8px 6px 0;margin-right:8px}
-.at-sm{display:none;font-family:var(--fd);font-size:16px;font-weight:600;color:var(--gold2);margin-right:auto}
-.tb{font-family:var(--fb);font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--cr3);background:none;border:none;padding:0 20px;height:100%;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;white-space:nowrap}
-.tb:hover{color:var(--cr2)}
-.tb.on{color:var(--gold2);border-bottom-color:var(--gold2)}
-.tnst{margin-left:auto;font-family:var(--fm);font-size:11px;color:var(--cr4);white-space:nowrap}
-
-/* TAB PANES */
-.tp{display:none;flex:1;flex-direction:column;overflow:hidden}
-.tp.on{display:flex}
-
-/* SUB TABS */
-.stb{display:flex;border-bottom:1px solid var(--brd);background:linear-gradient(to bottom,var(--bg3),var(--bg2));padding:0 20px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0}
-.stb::-webkit-scrollbar{display:none}
-.stb-b{font-family:var(--fb);font-size:13px;font-weight:600;letter-spacing:.03em;color:var(--cr3);background:none;border:none;padding:12px 18px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
-.stb-b:hover{color:var(--cr2)}
-.stb-b.on{color:var(--gold2);border-bottom-color:var(--gold)}
-.cnt{display:inline-block;font-size:10px;font-family:var(--fm);background:var(--bg4);border:1px solid var(--brd);border-radius:10px;padding:0 6px;margin-left:5px;color:var(--cr3);vertical-align:middle}
-.stb-b.on .cnt{background:rgba(200,146,58,.12);border-color:rgba(200,146,58,.3);color:var(--gold)}
-.sp{display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 20px 24px}
-.sp.on{display:block}
-
-/* TABLE */
-.ts{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--brd)}
-table.dt{width:100%;border-collapse:collapse;font-size:13px;min-width:820px}
-table.dt thead tr{background:var(--bg3);border-bottom:1px solid var(--brd2);position:sticky;top:0;z-index:2}
-table.dt th{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--cr3);white-space:nowrap;background:var(--bg3)}
-table.dt tbody tr{border-bottom:1px solid rgba(61,50,40,.5);transition:background .12s}
-table.dt tbody tr:hover{background:rgba(200,146,58,.04)}
-table.dt td{padding:9px 14px;vertical-align:middle}
-.c-tick{font-family:var(--fm);font-size:12px;color:var(--tl);font-weight:600}
-.c-name{font-weight:500;font-size:14px}
-.c-num{font-family:var(--fm);font-size:13px;color:var(--cr2)}
-.c-pos{font-family:var(--fm);font-size:13px;color:var(--gn);font-weight:600}
-.c-neg{font-family:var(--fm);font-size:13px;color:var(--rd);font-weight:600}
-.c-why{font-size:12px;color:var(--cr3);max-width:200px;white-space:normal;line-height:1.45}
-.c-gem{font-size:12px;color:var(--gold2);font-weight:600;white-space:nowrap}
-.s-buy{color:var(--gn);font-weight:700;font-size:13px}
-.s-sell{color:var(--rd);font-weight:700;font-size:13px}
-.s-neu{color:var(--cr3);font-size:13px}
-.s-v{font-size:12px;color:var(--bl)}
-.btn-ai{background:rgba(200,146,58,.08);color:var(--gold);border:1px solid rgba(200,146,58,.25);border-radius:var(--r2);font-family:var(--fb);font-size:11px;font-weight:600;padding:5px 10px;cursor:pointer;transition:all .15s;white-space:nowrap}
-.btn-ai:hover{background:rgba(200,146,58,.18);border-color:var(--gold2);color:var(--gold2)}
-
-/* MOBILE CARDS */
-.cl{display:none;flex-direction:column;gap:10px}
-.sc{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--r);padding:14px 16px;transition:border-color .15s}
-.sc:hover{border-color:var(--brd2)}
-.sc-t{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px}
-.sc-tc{font-family:var(--fm);font-size:13px;color:var(--tl);font-weight:600}
-.sc-tn{font-size:16px;font-weight:600;margin-top:1px}
-.sc-pr{text-align:right}
-.sc-pr .p{font-family:var(--fm);font-size:17px;font-weight:600;color:var(--cr)}
-.sc-pr .c{font-family:var(--fm);font-size:13px}
-.pls{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.pl{display:inline-flex;align-items:center;font-size:12px;font-weight:600;border-radius:4px;padding:3px 8px;white-space:nowrap}
-.pl-b{background:rgba(114,199,142,.12);color:var(--gn);border:1px solid rgba(114,199,142,.3)}
-.pl-s{background:rgba(217,96,96,.12);color:var(--rd);border:1px solid rgba(217,96,96,.3)}
-.pl-n{background:rgba(90,78,68,.3);color:var(--cr3);border:1px solid var(--brd)}
-.pl-g{background:rgba(200,146,58,.12);color:var(--gold2);border:1px solid rgba(200,146,58,.3)}
-.sc-w{font-size:12px;color:var(--cr3);margin-bottom:8px;line-height:1.5}
-.sc-f{display:flex;align-items:center;justify-content:space-between}
-.sc-m{font-family:var(--fm);font-size:11px;color:var(--cr4)}
-
-/* EMPTY / PH */
-.empty{padding:48px 20px;text-align:center;color:var(--cr3);font-size:15px}
-.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:200px;gap:12px;color:var(--cr3)}
-.ph-i{font-size:52px;opacity:.25}
-.ph-t{font-size:15px;color:var(--cr3)}
-.ph-h{font-size:13px;color:var(--cr4);text-align:center;max-width:280px;line-height:1.55}
-
-/* NEWS TAB */
-#t-news{overflow-y:auto}
-.ni{padding:20px;max-width:860px}
-.nsb{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
-.nsb input{flex:1;min-width:180px}
-.btn-g{background:linear-gradient(135deg,#c07230,#8a4f18);color:#fff;border:none;border-radius:var(--r);font-family:var(--fb);font-size:14px;font-weight:700;padding:9px 20px;cursor:pointer;transition:all .18s;white-space:nowrap;box-shadow:0 2px 10px rgba(192,114,48,.3)}
-.btn-g:hover{background:linear-gradient(135deg,#d4813a,#9a5f22);transform:translateY(-1px)}
-.ac{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--r);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.35)}
-.ac-h{display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(to right,#211a10,var(--bg3));border-bottom:1px solid var(--brd);flex-wrap:wrap}
-.tc{font-family:var(--fm);font-size:14px;font-weight:600;color:var(--tl);background:rgba(112,191,176,.1);border:1px solid rgba(112,191,176,.25);border-radius:4px;padding:3px 10px}
-.nl{font-size:17px;font-weight:600;color:var(--cr)}
-.sbdg{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:3px}
-.bdg-s{background:rgba(114,199,142,.1);color:var(--gn);border:1px solid rgba(114,199,142,.25)}
-.bdg-y{background:rgba(122,174,212,.1);color:var(--bl);border:1px solid rgba(122,174,212,.25)}
-.ac-bd{padding:20px 22px;font-size:14px;line-height:1.8;color:var(--cr2)}
-.ac-bd h2{font-family:var(--fd);font-size:20px;font-weight:600;color:var(--cr);margin:20px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--brd)}
-.ac-bd h2:first-child{margin-top:0}
-.ac-bd h3{font-size:15px;font-weight:600;color:var(--gold2);margin:14px 0 6px}
-.ac-bd p{margin:6px 0}
-.ac-bd ul{padding-left:20px;margin:8px 0}
-.ac-bd li{margin:5px 0}
-.ac-bd strong{color:var(--cr);font-weight:600}
-.sm-bar{display:flex;border-top:1px solid var(--brd);background:var(--bg3);flex-wrap:wrap}
-.sm-i{flex:1;min-width:80px;padding:12px 14px;text-align:center;border-right:1px solid var(--brd)}
-.sm-i:last-child{border-right:none}
-.sm-v{display:block;font-family:var(--fm);font-size:16px;font-weight:600;color:var(--gold2)}
-.sm-l{display:block;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--cr3);margin-top:2px}
-.nr{margin-top:12px}
-.nr summary{cursor:pointer;font-size:12px;color:var(--cr3);padding:6px 0;user-select:none}
-.nr pre{font-family:var(--fm);font-size:11px;color:var(--cr3);background:var(--bg3);padding:12px;border-radius:var(--r2);overflow-x:auto;white-space:pre-wrap;margin-top:6px;border:1px solid var(--brd)}
-
-/* LOADING */
-.ld{display:flex;align-items:center;gap:12px;padding:24px 20px;color:var(--cr2);font-size:14px}
-.spin{width:20px;height:20px;flex-shrink:0;border:2px solid var(--brd2);border-top-color:var(--gold2);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* CHART TAB */
-#t-chart{overflow-y:auto}
-.ci{padding:20px}
-.cc{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-end}
-.cc select,.cc input[type=text]{flex:1;min-width:160px;max-width:300px}
-.btn-o{background:var(--bg3);color:var(--cr2);border:1px solid var(--brd2);border-radius:var(--r);font-family:var(--fb);font-size:14px;font-weight:600;padding:9px 18px;cursor:pointer;transition:all .15s;white-space:nowrap}
-.btn-o:hover{border-color:var(--gold);color:var(--gold2)}
-#cw{border-radius:var(--r);overflow:hidden;border:1px solid var(--brd);min-height:420px}
-
-/* RESPONSIVE */
-@media(max-width:768px){
-  body{overflow:hidden}
-  #sb{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);box-shadow:4px 0 30px rgba(0,0,0,.6);width:min(var(--sw),92vw)}
-  #sb.on{transform:translateX(0)}
-  .sb-x{display:flex}
-  .hbg{display:flex}
-  .at-sm{display:block}
-  .tb{padding:0 12px;font-size:12px}
-  .tb:nth-child(4){display:none}
-  .ts{display:none}
-  .cl{display:flex}
-  .ni{padding:14px}
-  .ci{padding:14px}
-  .sp{padding:12px 12px 20px}
-  #tn{padding:0 14px}
-  .ac-bd{padding:14px 16px}
-  .sm-i{padding:10px 10px}
+body {
+  font-family: var(--ff-body);
+  background: var(--bg1);
+  color: var(--tx1);
+  font-size: 15px;
+  line-height: 1.65;
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
 }
-@media(min-width:769px){
-  .hbg{display:none!important}
-  .at-sm{display:none!important}
-  .tb:nth-child(4){display:flex!important;align-items:center}
-  .ts{display:block}
-  .cl{display:none}
+
+/* ─── SCROLLBARS ─── */
+* { scrollbar-width: thin; scrollbar-color: var(--bdr2) var(--bg2); }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--bdr2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--bdr3); }
+
+/* ─── OVERLAY ─── */
+#ov {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,7,4,0.72);
+  backdrop-filter: blur(3px);
+  z-index: 40;
+  transition: opacity 0.25s;
+}
+#ov.on { display: block; }
+
+/* ══════════════════════════════
+   SIDEBAR
+══════════════════════════════ */
+#sb {
+  width: var(--sw);
+  min-width: var(--sw);
+  background: var(--bg2);
+  border-right: 1px solid var(--bdr1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 50;
+  transition: transform 0.28s var(--ease);
+  flex-shrink: 0;
+}
+
+/* Sidebar header */
+.sb-logo {
+  padding: 24px 22px 18px;
+  background: linear-gradient(170deg, #2a1e0e 0%, #1a1208 100%);
+  border-bottom: 1px solid var(--bdr1);
+  position: relative;
+}
+.sb-logo-title {
+  font-family: var(--ff-title);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--gold2);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+.sb-logo-sub {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--tx3);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-top: 5px;
+}
+.sb-close-btn {
+  display: none;
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  background: var(--bg4); border: 1px solid var(--bdr2);
+  border-radius: 50%; color: var(--tx2);
+  width: 30px; height: 30px; font-size: 15px;
+  cursor: pointer; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.sb-close-btn:hover { background: var(--bg5); }
+
+.sb-body {
+  padding: 18px 18px 24px;
+  display: flex; flex-direction: column; gap: 18px;
+  flex: 1;
+}
+
+/* ─── FORM ELEMENTS ─── */
+.fgrp { display: flex; flex-direction: column; gap: 6px; }
+
+.flbl {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--tx3);
+  display: flex; align-items: center; gap: 6px;
+}
+.flbl-opt { font-weight: 400; color: var(--tx4); text-transform: none; letter-spacing: 0; }
+.key-saved {
+  font-size: 10px; font-weight: 600;
+  color: var(--green); letter-spacing: 0.04em;
+  background: rgba(93,186,128,0.1);
+  border: 1px solid rgba(93,186,128,0.25);
+  border-radius: 3px; padding: 1px 5px;
+}
+
+.inp-wrap { position: relative; }
+.inp-wrap .eye {
+  position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: var(--tx3); font-size: 14px; line-height: 1;
+  transition: color 0.15s; padding: 3px;
+}
+.inp-wrap .eye:hover { color: var(--gold2); }
+
+input[type="text"],
+input[type="password"],
+textarea,
+select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--bdr1);
+  border-radius: var(--r2);
+  color: var(--tx1);
+  font-family: var(--ff-body);
+  font-size: 14px;
+  padding: 10px 13px;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  -webkit-appearance: none; appearance: none;
+}
+input[type="password"] { padding-right: 38px; font-size: 15px; letter-spacing: 0.1em; }
+input[type="text"]:focus,
+input[type="password"]:focus,
+textarea:focus, select:focus {
+  border-color: var(--gold);
+  background: var(--bg4);
+  box-shadow: 0 0 0 3px rgba(212,151,42,0.14);
+}
+input::placeholder, textarea::placeholder { color: var(--tx4); font-size: 13px; }
+select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1.5l4.5 4 4.5-4' stroke='%239a8268' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+}
+textarea {
+  resize: vertical;
+  font-family: var(--ff-mono);
+  font-size: 12px; line-height: 1.7;
+  min-height: 88px;
+}
+
+.flink { font-size: 12px; color: var(--tx3); margin-top: 1px; }
+.flink a { color: var(--gold); text-decoration: none; transition: color 0.15s; }
+.flink a:hover { color: var(--gold2); text-decoration: underline; }
+
+/* PE row */
+.pe-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.pe-badge {
+  font-family: var(--ff-mono); font-size: 15px; font-weight: 600;
+  color: var(--gold2);
+  background: rgba(212,151,42,0.12);
+  border: 1px solid rgba(212,151,42,0.28);
+  border-radius: 5px; padding: 2px 10px;
+}
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; background: var(--bdr2);
+  border-radius: 2px; outline: none; cursor: pointer; padding: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  background: var(--gold2);
+  border: 2px solid var(--bg1);
+  border-radius: 50%; cursor: pointer;
+  box-shadow: 0 0 8px rgba(232,176,64,0.5);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 14px rgba(232,176,64,0.7);
+}
+
+.sdiv { height: 1px; background: var(--bdr1); }
+
+/* Run button */
+.btn-run {
+  background: linear-gradient(145deg, #c98428 0%, #8a5012 100%);
+  color: #fff8ee;
+  border: none; border-radius: var(--r);
+  font-family: var(--ff-body);
+  font-size: 15px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  padding: 13px 16px;
+  cursor: pointer; width: 100%;
+  transition: all 0.2s var(--ease);
+  box-shadow: 0 4px 16px rgba(140,70,16,0.4), inset 0 1px 0 rgba(255,255,255,0.12);
+  position: relative; overflow: hidden;
+}
+.btn-run:hover:not(:disabled) {
+  background: linear-gradient(145deg, #da9435 0%, #9a6020 100%);
+  box-shadow: 0 6px 24px rgba(140,70,16,0.55), inset 0 1px 0 rgba(255,255,255,0.15);
+  transform: translateY(-1px);
+}
+.btn-run:active:not(:disabled) { transform: translateY(0); }
+.btn-run:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* Progress */
+#prog-box {
+  display: none; flex-direction: column; gap: 9px;
+  background: var(--bg3); border: 1px solid var(--bdr1);
+  border-radius: var(--r); padding: 13px 15px;
+}
+.prog-txt { font-family: var(--ff-mono); font-size: 11px; color: var(--tx2); }
+.prog-track { height: 4px; background: var(--bdr1); border-radius: 2px; overflow: hidden; }
+.prog-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--amber), var(--gold2), var(--gold3));
+  border-radius: 2px;
+  transition: width 0.35s var(--ease);
+  box-shadow: 0 0 8px rgba(232,176,64,0.5);
+}
+
+.sb-note {
+  font-size: 12px; color: var(--tx3); line-height: 1.7;
+  background: rgba(212,151,42,0.05);
+  border: 1px solid rgba(212,151,42,0.15);
+  border-radius: var(--r); padding: 11px 13px;
+}
+
+/* ══════════════════════════════
+   MAIN AREA
+══════════════════════════════ */
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+/* Top nav */
+#topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--bdr1);
+  padding: 0 22px;
+  display: flex; align-items: center;
+  height: 54px; flex-shrink: 0;
+  gap: 2px;
+}
+.hbg-btn {
+  display: none;
+  background: none; border: none;
+  color: var(--tx2); font-size: 20px;
+  cursor: pointer; padding: 6px 10px 6px 0;
+  transition: color 0.15s;
+}
+.hbg-btn:hover { color: var(--tx1); }
+.title-sm {
+  display: none;
+  font-family: var(--ff-title);
+  font-size: 16px; font-weight: 600;
+  color: var(--gold2);
+  margin-right: auto;
+}
+.nav-tab {
+  font-family: var(--ff-body);
+  font-size: 14px; font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--tx3);
+  background: none; border: none;
+  padding: 0 20px; height: 100%;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.nav-tab:hover { color: var(--tx2); }
+.nav-tab.on { color: var(--gold2); border-bottom-color: var(--gold); }
+.nav-status {
+  margin-left: auto;
+  font-family: var(--ff-mono); font-size: 11px;
+  color: var(--tx4); white-space: nowrap;
+}
+
+/* ─── TAB PANES ─── */
+.pane { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.pane.on { display: flex; }
+
+/* ══════════════════════════════
+   SCREEN TAB
+══════════════════════════════ */
+.subtab-bar {
+  display: flex;
+  background: linear-gradient(to bottom, var(--bg3), var(--bg2));
+  border-bottom: 1px solid var(--bdr1);
+  padding: 0 22px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  flex-shrink: 0;
+}
+.subtab-bar::-webkit-scrollbar { display: none; }
+
+.stab {
+  font-family: var(--ff-body);
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--tx3);
+  background: none; border: none;
+  padding: 13px 18px; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s var(--ease);
+  white-space: nowrap; flex-shrink: 0;
+}
+.stab:hover { color: var(--tx2); }
+.stab.on { color: var(--gold2); border-bottom-color: var(--gold); }
+
+.stab-cnt {
+  display: inline-block;
+  font-family: var(--ff-mono); font-size: 10px; font-weight: 600;
+  background: var(--bg4); border: 1px solid var(--bdr1);
+  border-radius: 10px; padding: 1px 7px;
+  margin-left: 5px; color: var(--tx3);
+  vertical-align: middle;
+  transition: all 0.15s;
+}
+.stab.on .stab-cnt {
+  background: rgba(212,151,42,0.15);
+  border-color: rgba(212,151,42,0.35);
+  color: var(--gold2);
+}
+
+.subpane { display: none; flex: 1; overflow-y: auto; padding: 20px 22px 28px; }
+.subpane.on { display: block; }
+
+/* ─── DATA TABLE ─── */
+.tbl-wrap {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border-radius: var(--r); border: 1px solid var(--bdr1);
+}
+table.dtbl {
+  width: 100%; border-collapse: collapse;
+  font-size: 14px; min-width: 860px;
+}
+table.dtbl thead {
+  position: sticky; top: 0; z-index: 3;
+}
+table.dtbl thead tr {
+  background: var(--bg3);
+  border-bottom: 1px solid var(--bdr2);
+}
+table.dtbl th {
+  padding: 11px 15px; text-align: left;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tx3); white-space: nowrap;
+  background: var(--bg3);
+}
+table.dtbl tbody tr {
+  border-bottom: 1px solid rgba(61,47,30,0.7);
+  transition: background 0.12s;
+}
+table.dtbl tbody tr:last-child { border-bottom: none; }
+table.dtbl tbody tr:hover { background: rgba(212,151,42,0.05); }
+table.dtbl td { padding: 11px 15px; vertical-align: middle; }
+
+.c-tk { font-family: var(--ff-mono); font-size: 13px; color: var(--teal); font-weight: 600; }
+.c-nm { font-size: 15px; font-weight: 500; }
+.c-nu { font-family: var(--ff-mono); font-size: 14px; color: var(--tx2); }
+.c-up { font-family: var(--ff-mono); font-size: 14px; color: var(--green); font-weight: 600; }
+.c-dn { font-family: var(--ff-mono); font-size: 14px; color: var(--red); font-weight: 600; }
+.c-wy { font-size: 13px; color: var(--tx3); max-width: 210px; white-space: normal; line-height: 1.45; }
+.c-gm { font-size: 12px; color: var(--gold2); font-weight: 700; white-space: nowrap; }
+.s-b  { color: var(--green); font-weight: 700; font-size: 14px; }
+.s-s  { color: var(--red); font-weight: 700; font-size: 14px; }
+.s-n  { color: var(--tx3); font-size: 14px; }
+.s-v  { font-size: 12px; color: var(--blue); }
+
+.btn-ai {
+  background: rgba(212,151,42,0.1);
+  color: var(--gold2);
+  border: 1px solid rgba(212,151,42,0.3);
+  border-radius: var(--r2);
+  font-family: var(--ff-body);
+  font-size: 12px; font-weight: 600;
+  padding: 6px 11px; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
+.btn-ai:hover {
+  background: rgba(212,151,42,0.2);
+  border-color: var(--gold2); color: var(--gold3);
+  box-shadow: 0 2px 8px rgba(212,151,42,0.2);
+}
+
+/* ─── MOBILE CARDS ─── */
+.card-list { display: none; flex-direction: column; gap: 12px; }
+
+.stock-card {
+  background: var(--bg3);
+  border: 1px solid var(--bdr1);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.stock-card:hover {
+  border-color: var(--bdr2);
+  box-shadow: 0 3px 16px rgba(0,0,0,0.25);
+}
+.sc-top {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 10px;
+  margin-bottom: 10px;
+}
+.sc-left .sc-tk { font-family: var(--ff-mono); font-size: 13px; color: var(--teal); font-weight: 600; }
+.sc-left .sc-nm { font-size: 17px; font-weight: 600; margin-top: 2px; }
+.sc-right { text-align: right; }
+.sc-right .sc-p { font-family: var(--ff-mono); font-size: 18px; font-weight: 600; color: var(--tx1); }
+.sc-right .sc-c { font-family: var(--ff-mono); font-size: 13px; }
+
+.pills { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+.pill {
+  display: inline-flex; align-items: center;
+  font-size: 13px; font-weight: 600;
+  border-radius: 5px; padding: 4px 10px; white-space: nowrap;
+}
+.pill-b  { background: rgba(93,186,128,0.12); color: var(--green); border: 1px solid rgba(93,186,128,0.3); }
+.pill-s  { background: rgba(208,96,96,0.12); color: var(--red); border: 1px solid rgba(208,96,96,0.3); }
+.pill-n  { background: rgba(94,78,60,0.3); color: var(--tx3); border: 1px solid var(--bdr1); }
+.pill-g  { background: rgba(212,151,42,0.12); color: var(--gold2); border: 1px solid rgba(212,151,42,0.3); }
+
+.sc-why { font-size: 13px; color: var(--tx3); margin-bottom: 11px; line-height: 1.55; }
+.sc-foot { display: flex; align-items: center; justify-content: space-between; }
+.sc-meta { font-family: var(--ff-mono); font-size: 11px; color: var(--tx4); }
+
+/* ─── EMPTY / PLACEHOLDER ─── */
+.empty-msg { padding: 52px 24px; text-align: center; color: var(--tx3); font-size: 15px; }
+.ph-state {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 240px; gap: 14px;
+}
+.ph-icon { font-size: 56px; opacity: 0.2; }
+.ph-title { font-size: 16px; font-weight: 500; color: var(--tx3); }
+.ph-hint { font-size: 14px; color: var(--tx4); text-align: center; max-width: 300px; line-height: 1.6; }
+
+/* ══════════════════════════════
+   NEWS TAB
+══════════════════════════════ */
+#pane-news { overflow-y: auto; }
+.news-inner { padding: 22px; max-width: 880px; }
+
+.search-row {
+  display: flex; gap: 10px; margin-bottom: 22px;
+  flex-wrap: wrap; align-items: flex-end;
+}
+.search-row input { flex: 1; min-width: 190px; max-width: 320px; }
+
+.btn-gold {
+  background: linear-gradient(145deg, #c98428, #8a5012);
+  color: #fff8ee; border: none;
+  border-radius: var(--r);
+  font-family: var(--ff-body);
+  font-size: 15px; font-weight: 700;
+  padding: 10px 22px; cursor: pointer;
+  transition: all 0.2s; white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(140,70,16,0.4);
+}
+.btn-gold:hover {
+  background: linear-gradient(145deg, #da9435, #9a6020);
+  box-shadow: 0 5px 18px rgba(140,70,16,0.55);
+  transform: translateY(-1px);
+}
+
+/* Analysis card */
+.a-card {
+  background: var(--bg2);
+  border: 1px solid var(--bdr1);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.a-hdr {
+  display: flex; align-items: center;
+  gap: 12px; padding: 16px 20px;
+  background: linear-gradient(to right, #2a1e0e, var(--bg3));
+  border-bottom: 1px solid var(--bdr1);
+  flex-wrap: wrap;
+}
+.a-chip {
+  font-family: var(--ff-mono); font-size: 14px; font-weight: 600;
+  color: var(--teal);
+  background: rgba(90,184,168,0.1);
+  border: 1px solid rgba(90,184,168,0.28);
+  border-radius: 5px; padding: 3px 11px;
+}
+.a-name { font-family: var(--ff-title); font-size: 18px; font-weight: 600; color: var(--tx1); }
+.src-tag {
+  margin-left: auto; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 4px;
+}
+.src-s { background: rgba(93,186,128,0.1); color: var(--green); border: 1px solid rgba(93,186,128,0.28); }
+.src-y { background: rgba(122,173,204,0.1); color: var(--blue); border: 1px solid rgba(122,173,204,0.28); }
+
+.a-body {
+  padding: 22px 24px;
+  font-size: 15px; line-height: 1.8;
+  color: var(--tx2);
+}
+.a-body h2 {
+  font-family: var(--ff-title);
+  font-size: 20px; font-weight: 700;
+  color: var(--tx1);
+  margin: 22px 0 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--bdr1);
+}
+.a-body h2:first-child { margin-top: 0; }
+.a-body h3 { font-size: 16px; font-weight: 600; color: var(--gold2); margin: 16px 0 8px; }
+.a-body p { margin: 8px 0; }
+.a-body ul { padding-left: 22px; margin: 10px 0; }
+.a-body li { margin: 6px 0; }
+.a-body strong { color: var(--tx1); font-weight: 600; }
+
+.score-strip {
+  display: flex; border-top: 1px solid var(--bdr1);
+  background: var(--bg3); flex-wrap: wrap;
+}
+.sm-cell {
+  flex: 1; min-width: 90px;
+  padding: 14px 16px; text-align: center;
+  border-right: 1px solid var(--bdr1);
+}
+.sm-cell:last-child { border-right: none; }
+.sm-val {
+  display: block;
+  font-family: var(--ff-mono); font-size: 17px; font-weight: 600;
+  color: var(--gold2); line-height: 1;
+}
+.sm-lbl {
+  display: block; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--tx3); margin-top: 4px;
+}
+
+.raw-news { margin-top: 14px; }
+.raw-news summary {
+  cursor: pointer; font-size: 12px;
+  color: var(--tx3); padding: 7px 0;
+  user-select: none; list-style: none;
+}
+.raw-news summary::-webkit-details-marker { display: none; }
+.raw-news pre {
+  font-family: var(--ff-mono); font-size: 11px;
+  color: var(--tx3); background: var(--bg3);
+  padding: 13px; border-radius: var(--r2);
+  overflow-x: auto; white-space: pre-wrap;
+  margin-top: 7px; border: 1px solid var(--bdr1);
+  line-height: 1.65;
+}
+
+/* Loading */
+.loading {
+  display: flex; align-items: center; gap: 14px;
+  padding: 28px 22px;
+  color: var(--tx2); font-size: 15px;
+}
+.spin {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border: 2px solid var(--bdr2);
+  border-top-color: var(--gold2);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════
+   CHART TAB
+══════════════════════════════ */
+#pane-chart { overflow-y: auto; }
+.chart-inner { padding: 22px; }
+.chart-ctrl {
+  display: flex; gap: 10px; margin-bottom: 16px;
+  flex-wrap: wrap; align-items: flex-end;
+}
+.chart-ctrl select,
+.chart-ctrl input[type="text"] {
+  flex: 1; min-width: 170px; max-width: 320px;
+}
+.btn-outline {
+  background: var(--bg3); color: var(--tx2);
+  border: 1px solid var(--bdr2);
+  border-radius: var(--r);
+  font-family: var(--ff-body);
+  font-size: 14px; font-weight: 600;
+  padding: 10px 20px; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
+.btn-outline:hover { border-color: var(--gold); color: var(--gold2); background: var(--bg4); }
+#chart-box {
+  border-radius: var(--r); overflow: hidden;
+  border: 1px solid var(--bdr1);
+  min-height: 440px;
+  background: var(--bg2);
+}
+
+/* ══════════════════════════════
+   RESPONSIVE
+══════════════════════════════ */
+@media (max-width: 768px) {
+  body { overflow: hidden; }
+
+  #sb {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    transform: translateX(-100%);
+    box-shadow: 8px 0 40px rgba(0,0,0,0.7);
+    width: min(var(--sw), 92vw);
+  }
+  #sb.on { transform: translateX(0); }
+  .sb-close-btn { display: flex; }
+
+  .hbg-btn { display: block; }
+  .title-sm { display: block; }
+
+  /* Hide "選股戰情室" text tab on mobile (shown via subtabs) */
+  .nav-tab[data-tab="screen"] { display: none; }
+
+  /* Table → Cards */
+  .tbl-wrap { display: none; }
+  .card-list { display: flex; }
+
+  .subpane { padding: 14px 14px 22px; }
+  .subtab-bar { padding: 0 14px; }
+  #topbar { padding: 0 14px; }
+  .news-inner { padding: 14px; }
+  .chart-inner { padding: 14px; }
+  .a-body { padding: 16px 18px; }
+  .sm-cell { padding: 12px 10px; }
+}
+
+@media (min-width: 769px) {
+  .hbg-btn { display: none !important; }
+  .title-sm { display: none !important; }
+  .nav-tab[data-tab="screen"] { display: flex !important; align-items: center; }
+  .tbl-wrap { display: block; }
+  .card-list { display: none !important; }
 }
 </style>
 </head>
 <body>
+
 <div id="ov"></div>
 
-<!-- SIDEBAR -->
+<!-- ════════ SIDEBAR ════════ -->
 <aside id="sb">
-  <div class="sb-h">
-    <div class="sb-ht">📊 AI 股市戰情室</div>
-    <div class="sb-hs">Global Stock Screener v2.0</div>
-    <button class="sb-x" id="sb-x">✕</button>
+  <div class="sb-logo">
+    <div class="sb-logo-title">📊 AI 股市戰情室</div>
+    <div class="sb-logo-sub">Global Stock Screener v2.0</div>
+    <button class="sb-close-btn" id="sb-x-btn" aria-label="關閉選單">✕</button>
   </div>
-  <div class="sb-bd">
-    <div class="fg">
-      <label class="fl">Gemini API Key <span id="gks" class="ks">✓ 已記住</span></label>
-      <div class="iw">
-        <input type="password" id="gk" placeholder="必填 — AI 新聞分析" autocomplete="off">
-        <button class="eb" data-t="gk">👁</button>
+
+  <div class="sb-body">
+
+    <div class="fgrp">
+      <label class="flbl">
+        Gemini API Key
+        <span id="gk-saved" class="key-saved" style="display:none">✓ 已記住</span>
+      </label>
+      <div class="inp-wrap">
+        <input type="password" id="gk-inp" placeholder="必填 — AI 新聞分析" autocomplete="off">
+        <button class="eye" data-for="gk-inp" aria-label="顯示/隱藏">👁</button>
       </div>
-      <div class="fh">🔗 <a href="https://aistudio.google.com/app/apikey" target="_blank">取得 Gemini Key（免費）</a></div>
+      <div class="flink">🔗 <a href="https://aistudio.google.com/app/apikey" target="_blank">取得 Gemini Key（免費）</a></div>
     </div>
-    <div class="fg">
-      <label class="fl">Serper API Key <span class="opt">(選填)</span> <span id="sks" class="ks">✓ 已記住</span></label>
-      <div class="iw">
-        <input type="password" id="sk" placeholder="無填入則用 Yahoo 免費新聞" autocomplete="off">
-        <button class="eb" data-t="sk">👁</button>
+
+    <div class="fgrp">
+      <label class="flbl">
+        Serper API Key
+        <span class="flbl-opt">（選填）</span>
+        <span id="sk-saved" class="key-saved" style="display:none">✓ 已記住</span>
+      </label>
+      <div class="inp-wrap">
+        <input type="password" id="sk-inp" placeholder="無填入則用 Yahoo 免費新聞" autocomplete="off">
+        <button class="eye" data-for="sk-inp" aria-label="顯示/隱藏">👁</button>
       </div>
-      <div class="fh">🔗 <a href="https://serper.dev/api-keys" target="_blank">取得 Serper Key（每月 2,500 次免費）</a></div>
+      <div class="flink">🔗 <a href="https://serper.dev/api-keys" target="_blank">取得 Serper Key（每月 2,500 次免費）</a></div>
     </div>
+
     <div class="sdiv"></div>
-    <div class="fg">
-      <label class="fl">📂 市場族群</label>
-      <select id="gs"></select>
+
+    <div class="fgrp">
+      <label class="flbl">📂 市場族群</label>
+      <select id="grp-sel"></select>
     </div>
-    <div class="fg">
+
+    <div class="fgrp">
       <div class="pe-row">
-        <label class="fl" style="margin:0">合理本益比</label>
-        <span class="pe-chip"><span id="ped">25</span>x</span>
+        <label class="flbl" style="margin:0">合理本益比</label>
+        <span class="pe-badge"><span id="pe-val">25</span>x</span>
       </div>
-      <input type="range" id="pes" min="5" max="80" value="25">
+      <input type="range" id="pe-range" min="5" max="80" value="25">
     </div>
-    <div class="fg">
-      <label class="fl">觀察清單（逗號分隔）</label>
-      <textarea id="tks" rows="5"></textarea>
+
+    <div class="fgrp">
+      <label class="flbl">觀察清單（逗號分隔）</label>
+      <textarea id="tks-inp"></textarea>
     </div>
-    <button class="btn-run" id="run">🚀 執行選股分析</button>
-    <div id="pw">
-      <div class="pl" id="plb">分析中...</div>
-      <div class="po"><div class="pi" id="pib"></div></div>
+
+    <button class="btn-run" id="run-btn">🚀 執行選股分析</button>
+
+    <div id="prog-box">
+      <div class="prog-txt" id="prog-lbl">初始化...</div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
     </div>
-    <div class="sn">🔐 API Key 儲存於您的裝置（localStorage），不傳至任何伺服器。<br>換瀏覽器或無痕模式需重新輸入。</div>
+
+    <div class="sb-note">
+      🔐 API Key 儲存於您的裝置（localStorage），不傳至任何伺服器。<br>
+      換瀏覽器或無痕模式需重新輸入。
+    </div>
+
   </div>
 </aside>
 
-<!-- MAIN -->
+<!-- ════════ MAIN ════════ -->
 <div id="main">
-  <nav id="tn">
-    <button class="hbg" id="hbg">☰</button>
-    <span class="at-sm">AI 股市戰情室</span>
-    <button class="tb on" data-tab="screen">📊 選股戰情室</button>
-    <button class="tb" data-tab="news">🔍 AI 新聞分析</button>
-    <button class="tb" data-tab="chart">📈 K 線圖</button>
-    <span class="tnst" id="tst"></span>
+
+  <nav id="topbar">
+    <button class="hbg-btn" id="hbg-btn" aria-label="選單">☰</button>
+    <span class="title-sm">AI 股市戰情室</span>
+    <button class="nav-tab on" data-tab="screen">📊 選股戰情室</button>
+    <button class="nav-tab" data-tab="news">🔍 AI 新聞分析</button>
+    <button class="nav-tab" data-tab="chart">📈 K 線圖</button>
+    <span class="nav-status" id="nav-st"></span>
   </nav>
 
-  <!-- Screen -->
-  <div class="tp on" id="t-screen">
-    <div class="stb">
-      <button class="stb-b on" data-sub="gem">💎 落難績優股 <span class="cnt" id="cg">0</span></button>
-      <button class="stb-b" data-sub="buy">🚀 強力買進 <span class="cnt" id="cb">0</span></button>
-      <button class="stb-b" data-sub="sell">📉 建議賣出 <span class="cnt" id="cs">0</span></button>
-      <button class="stb-b" data-sub="watch">👀 觀望中 <span class="cnt" id="cw2">0</span></button>
+  <!-- Screen pane -->
+  <div class="pane on" id="pane-screen">
+    <div class="subtab-bar">
+      <button class="stab on" data-sub="gem">
+        💎 落難績優股 <span class="stab-cnt" id="cnt-g">0</span>
+      </button>
+      <button class="stab" data-sub="buy">
+        🚀 強力買進 <span class="stab-cnt" id="cnt-b">0</span>
+      </button>
+      <button class="stab" data-sub="sell">
+        📉 建議賣出 <span class="stab-cnt" id="cnt-s">0</span>
+      </button>
+      <button class="stab" data-sub="watch">
+        👀 觀望中 <span class="stab-cnt" id="cnt-w">0</span>
+      </button>
     </div>
-    <div class="sp on" id="s-gem"><div class="ph"><div class="ph-i">💎</div><p class="ph-t">請先執行選股分析</p><p class="ph-h">點擊左側「🚀 執行選股分析」<br>開始掃描所選族群</p></div></div>
-    <div class="sp" id="s-buy"><div class="ph"><div class="ph-i">🚀</div><p class="ph-t">請先執行選股分析</p></div></div>
-    <div class="sp" id="s-sell"><div class="ph"><div class="ph-i">📉</div><p class="ph-t">請先執行選股分析</p></div></div>
-    <div class="sp" id="s-watch"><div class="ph"><div class="ph-i">👀</div><p class="ph-t">請先執行選股分析</p></div></div>
+
+    <div class="subpane on" id="sub-gem">
+      <div class="ph-state">
+        <div class="ph-icon">💎</div>
+        <p class="ph-title">請先執行選股分析</p>
+        <p class="ph-hint">點擊左側「🚀 執行選股分析」<br>開始掃描所選族群</p>
+      </div>
+    </div>
+    <div class="subpane" id="sub-buy">
+      <div class="ph-state"><div class="ph-icon">🚀</div><p class="ph-title">請先執行選股分析</p></div>
+    </div>
+    <div class="subpane" id="sub-sell">
+      <div class="ph-state"><div class="ph-icon">📉</div><p class="ph-title">請先執行選股分析</p></div>
+    </div>
+    <div class="subpane" id="sub-watch">
+      <div class="ph-state"><div class="ph-icon">👀</div><p class="ph-title">請先執行選股分析</p></div>
+    </div>
   </div>
 
-  <!-- News -->
-  <div class="tp" id="t-news">
-    <div class="ni">
-      <div class="nsb">
-        <input type="text" id="ni2" placeholder="輸入代號：2330.TW 或 NVDA" style="max-width:300px">
-        <button class="btn-g" id="nb">🧠 AI 深度分析</button>
+  <!-- News pane -->
+  <div class="pane" id="pane-news">
+    <div class="news-inner">
+      <div class="search-row">
+        <input type="text" id="news-inp" placeholder="輸入代號：2330.TW 或 NVDA">
+        <button class="btn-gold" id="news-btn">🧠 AI 深度分析</button>
       </div>
-      <div id="nr2">
-        <div class="ph" style="min-height:280px"><div class="ph-i">🔍</div><p class="ph-t">輸入股票代號後點擊分析</p><p class="ph-h">或在選股戰情室點選「🔍 AI」<br>需填入 Gemini API Key（左側設定）</p></div>
+      <div id="news-result">
+        <div class="ph-state" style="min-height:300px">
+          <div class="ph-icon">🔍</div>
+          <p class="ph-title">輸入股票代號後點擊分析</p>
+          <p class="ph-hint">或在選股戰情室點選「🔍 AI」快速跳轉<br>需填入 Gemini API Key（左側設定）</p>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Chart -->
-  <div class="tp" id="t-chart">
-    <div class="ci">
-      <div class="cc">
-        <select id="csel"><option value="">— 從分析結果選擇 —</option></select>
-        <input type="text" id="cman" placeholder="或直接輸入：2330.TW / NVDA">
-        <button class="btn-o" id="cdraw">繪製圖表</button>
+  <!-- Chart pane -->
+  <div class="pane" id="pane-chart">
+    <div class="chart-inner">
+      <div class="chart-ctrl">
+        <select id="chart-sel"><option value="">— 從分析結果選擇股票 —</option></select>
+        <input type="text" id="chart-inp" placeholder="或直接輸入：2330.TW / NVDA">
+        <button class="btn-outline" id="chart-btn">繪製圖表</button>
       </div>
-      <div id="cw"><div class="ph" style="min-height:400px"><div class="ph-i">📈</div><p class="ph-t">季線 · 年線 · 5年線 · 20年線</p><p class="ph-h">選擇或輸入股票後繪製長線均線</p></div></div>
+      <div id="chart-box">
+        <div class="ph-state" style="min-height:420px">
+          <div class="ph-icon">📈</div>
+          <p class="ph-title">季線 · 年線 · 5年線 · 20年線</p>
+          <p class="ph-hint">選擇或輸入股票後繪製長線均線視圖</p>
+        </div>
+      </div>
     </div>
   </div>
+
 </div>
 
+<!-- ════════ JAVASCRIPT ════════ -->
 <script>
 'use strict';
+
+/* ── DATA ── */
 const NAMES={"2330.TW":"台積電","2303.TW":"聯電","5347.TWO":"世界先進","6770.TW":"力積電","3711.TW":"日月光投控","2454.TW":"聯發科","3034.TW":"聯詠","2379.TW":"瑞昱","3035.TW":"智原","3443.TW":"創意","3661.TW":"世芯-KY","3529.TW":"力旺","6531.TW":"愛普","6643.TW":"M31","5274.TW":"信驊","5269.TW":"祥碩","6415.TW":"矽力-KY","2458.TW":"義隆","6202.TW":"盛群","6138.TW":"茂達","8016.TW":"矽創","3227.TWO":"原相","4966.TW":"譜瑞-KY","4919.TW":"新唐","2449.TW":"京元電","6239.TW":"力成","6147.TW":"頎邦","8150.TW":"南茂","3264.TWO":"欣銓","3131.TW":"弘塑","3680.TW":"家登","6196.TW":"帆宣","6187.TWO":"萬潤","5443.TWO":"均豪","6640.TWO":"均華","3583.TW":"辛耘","5536.TW":"聖暉","2404.TW":"漢唐","6139.TW":"亞翔","5483.TWO":"中美晶","6488.TW":"環球晶","3532.TW":"台勝科","1560.TW":"中砂","3450.TW":"聯鈞","3081.TWO":"聯亞","6442.TW":"光聖","2317.TW":"鴻海","2382.TW":"廣達","3231.TW":"緯創","6669.TW":"緯穎","2356.TW":"英業達","2376.TW":"技嘉","2357.TW":"華碩","2324.TW":"仁寶","4938.TW":"和碩","2301.TW":"光寶科","2353.TW":"宏碁","2377.TW":"微星","3706.TW":"神達","8210.TW":"勤誠","2049.TW":"上銀","3017.TW":"奇鋐","3324.TWO":"雙鴻","3653.TW":"健策","2421.TW":"建準","6230.TW":"超眾","3483.TW":"力致","3338.TW":"泰碩","3005.TW":"神基","2308.TW":"台達電","2408.TW":"南亞科","2344.TW":"華邦電","2337.TW":"旺宏","3260.TWO":"威剛","8299.TWO":"群聯","2451.TW":"創見","3006.TW":"晶豪科","5289.TW":"宜鼎","2409.TW":"友達","3481.TW":"群創","6116.TW":"彩晶","8069.TWO":"元太","6176.TW":"瑞儀","4961.TW":"天鈺","3545.TW":"敦泰","3037.TW":"欣興","8046.TW":"南電","3189.TW":"景碩","2368.TW":"金像電","2313.TW":"華通","6269.TW":"台郡","4958.TW":"臻鼎-KY","2383.TW":"台光電","6213.TW":"聯茂","6274.TW":"台燿","2327.TW":"國巨","2492.TW":"華新科","3026.TW":"禾伸堂","1513.TW":"中興電","1519.TW":"華城","1503.TW":"士電","1504.TW":"東元","1514.TW":"亞力","1605.TW":"華新","1609.TW":"大亞","6806.TW":"森崴能源","9958.TW":"世紀鋼","3708.TW":"上緯","6443.TW":"元晶","2542.TW":"興富發","2548.TW":"華固","2501.TW":"國建","2603.TW":"長榮","2609.TW":"陽明","2615.TW":"萬海","2606.TW":"裕民","2637.TW":"慧洋-KY","2618.TW":"長榮航","2610.TW":"華航","2634.TW":"漢翔","2645.TW":"長榮航太","2002.TW":"中鋼","2014.TW":"中鴻","2027.TW":"大成鋼","1101.TW":"台泥","1102.TW":"亞泥","1301.TW":"台塑","1303.TW":"南亞","1326.TW":"台化","6505.TW":"台塑化","1402.TW":"遠東新","1476.TW":"儒鴻","1477.TW":"聚陽","9910.TW":"豐泰","9904.TW":"寶成","9914.TW":"美利達","9921.TW":"巨大","2201.TW":"裕隆","2204.TW":"中華","2207.TW":"和泰車","2105.TW":"正新","1216.TW":"統一","5903.TW":"全家","5904.TW":"寶雅","2881.TW":"富邦金","2882.TW":"國泰金","2891.TW":"中信金","2886.TW":"兆豐金","2884.TW":"玉山金","2892.TW":"第一金","5880.TW":"合庫金","2885.TW":"元大金","2880.TW":"華南金","2883.TW":"開發金","2887.TW":"台新金","2890.TW":"永豐金","2888.TW":"新光金","2889.TW":"國票金","2834.TW":"臺企銀","5876.TW":"上海商銀","2801.TW":"彰銀","1795.TW":"美時","6446.TW":"藥華藥","4743.TWO":"合一","1760.TW":"寶齡富錦","4147.TW":"中裕","6550.TW":"北極星","4162.TWO":"智擎","6472.TWO":"保瑞","AAPL":"Apple","MSFT":"Microsoft","GOOG":"Alphabet","AMZN":"Amazon","NVDA":"NVIDIA","TSLA":"Tesla","META":"Meta","PLTR":"Palantir","SNOW":"Snowflake","MDB":"MongoDB","ESTC":"Elastic","CRWD":"CrowdStrike","PANW":"Palo Alto","FTNT":"Fortinet","ZS":"Zscaler","OKTA":"Okta","NET":"Cloudflare","S":"SentinelOne","CRM":"Salesforce","ADBE":"Adobe","ORCL":"Oracle","NOW":"ServiceNow","SAP":"SAP","INTU":"Intuit","WDAY":"Workday","TEAM":"Atlassian","DDOG":"Datadog","AMD":"AMD","INTC":"Intel","QCOM":"Qualcomm","AVGO":"Broadcom","MU":"Micron","TXN":"TI","ASML":"ASML","TSM":"台積電ADR","ARM":"Arm","AMAT":"Applied Materials","LRCX":"Lam Research","ADI":"Analog Devices","MRVL":"Marvell","KLAC":"KLA","ON":"ON Semi","V":"Visa","MA":"Mastercard","PYPL":"PayPal","SQ":"Block","COIN":"Coinbase","HOOD":"Robinhood","SHOP":"Shopify","MELI":"MercadoLibre","SE":"Sea Ltd","PDD":"Pinduoduo","BABA":"Alibaba","JD":"JD.com","UBER":"Uber","DASH":"DoorDash","ABNB":"Airbnb","BKNG":"Booking","NFLX":"Netflix","DIS":"Disney","SPOT":"Spotify","LLY":"Eli Lilly","NVO":"Novo Nordisk","JNJ":"J&J","PFE":"Pfizer","MRK":"Merck","UNH":"UnitedHealth","ABBV":"AbbVie","AMGN":"Amgen","ISRG":"Intuitive Surgical","VRTX":"Vertex","LMT":"Lockheed Martin","RTX":"Raytheon","BA":"Boeing","GD":"General Dynamics","NOC":"Northrop Grumman","AXON":"Axon","GE":"GE Aerospace","XOM":"Exxon Mobil","CVX":"Chevron","COP":"ConocoPhillips","COST":"Costco","WMT":"Walmart","PG":"P&G","KO":"Coca-Cola","PEP":"PepsiCo","MCD":"McDonald's","SBUX":"Starbucks","NKE":"Nike","SPY":"S&P500 ETF","QQQ":"Nasdaq100 ETF","SOXX":"半導體ETF","TLT":"20年美債ETF","GLD":"黃金ETF","ARKK":"ARK Innovation","SMH":"半導體ETF2","XLE":"能源ETF","XLV":"醫療ETF","XLF":"金融ETF"};
+
 const PRESETS={"📝 自選觀察清單":{c:"2330.TW, 2382.TW, 2603.TW, TSLA, NVDA, PLTR",p:25},"🤖 台股-AI 伺服器/組裝":{c:"2317.TW, 2382.TW, 3231.TW, 6669.TW, 2356.TW, 2376.TW, 2357.TW, 2324.TW, 4938.TW, 2301.TW, 2308.TW, 2377.TW, 8210.TW, 2049.TW",p:25},"💡 台股-半導體 IC設計":{c:"2454.TW, 3034.TW, 2379.TW, 3035.TW, 3443.TW, 3661.TW, 3529.TW, 6531.TW, 6643.TW, 5269.TW, 6415.TW, 5274.TW, 6138.TW, 3227.TWO, 4966.TW, 4919.TW",p:35},"🏭 台股-晶圓代工/設備":{c:"2330.TW, 2303.TW, 5347.TWO, 6770.TW, 3711.TW, 3131.TW, 3680.TW, 6196.TW, 6187.TWO, 5443.TWO, 6640.TWO, 6488.TW, 3532.TW, 3450.TW, 3081.TWO",p:22},"💾 台股-記憶體/封測/面板":{c:"2408.TW, 2344.TW, 2337.TW, 3260.TWO, 8299.TWO, 2449.TW, 6239.TW, 2409.TW, 3481.TW, 6116.TW, 8069.TWO, 6176.TW, 4961.TW",p:15},"❄️ 台股-散熱/PCB/被動":{c:"3017.TW, 3324.TWO, 3653.TW, 2421.TW, 3037.TW, 8046.TW, 3189.TW, 2368.TW, 2313.TW, 2383.TW, 6274.TW, 2327.TW, 2492.TW, 3026.TW",p:20},"🔌 台股-重電/綠能/營建":{c:"1513.TW, 1519.TW, 1503.TW, 1504.TW, 1605.TW, 6806.TW, 9958.TW, 3708.TW, 6443.TW, 1609.TW, 1514.TW, 2542.TW, 2548.TW",p:25},"🚢 台股-航運/航空/車":{c:"2603.TW, 2609.TW, 2615.TW, 2606.TW, 2637.TW, 2618.TW, 2610.TW, 2634.TW, 2201.TW, 2204.TW, 2207.TW, 2105.TW",p:12},"🛢️ 台股-塑化/鋼鐵/傳產":{c:"1301.TW, 1303.TW, 1326.TW, 6505.TW, 2002.TW, 2014.TW, 1101.TW, 1402.TW, 1476.TW, 9910.TW, 9914.TW, 1216.TW",p:15},"💰 台股-金融金控":{c:"2881.TW, 2882.TW, 2891.TW, 2886.TW, 2884.TW, 2892.TW, 5880.TW, 2885.TW, 2880.TW, 2883.TW, 2887.TW, 2890.TW",p:15},"🇺🇸 美股-科技七雄 Mag7":{c:"AAPL, MSFT, GOOG, AMZN, NVDA, TSLA, META",p:30},"🌌 美股-AI/大數據/資安":{c:"PLTR, SNOW, MDB, ESTC, CRWD, PANW, FTNT, ZS, OKTA, NET, S",p:40},"☁️ 美股-SaaS/雲端":{c:"CRM, ADBE, ORCL, NOW, SAP, INTU, WDAY, TEAM, DDOG",p:35},"⚙️ 美股-半導體巨頭":{c:"AMD, INTC, QCOM, AVGO, MU, TXN, ASML, TSM, ARM, AMAT, LRCX, ADI, MRVL, KLAC, ON",p:25},"💊 美股-醫療/製藥":{c:"LLY, NVO, JNJ, PFE, MRK, UNH, ABBV, AMGN, ISRG, VRTX",p:25},"🛍️ 美股-消費/ETF":{c:"COST, WMT, PG, KO, PEP, MCD, SBUX, NKE, NFLX, DIS, SPY, QQQ, SOXX, TLT, GLD",p:22}};
 
-const $=id=>document.getElementById(id),S={res:[],cache:{},run:false};
+/* ── STATE ── */
+const ST={res:[],cache:{},busy:false};
+const $=id=>document.getElementById(id);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const mob=()=>window.innerWidth<769;
-function gn(t){t=t.trim().toUpperCase();if(NAMES[t])return NAMES[t];if(t.includes('.TWO'))return NAMES[t.replace('.TWO','.TW')]||t;if(t.includes('.TW'))return NAMES[t.replace('.TW','.TWO')]||t;return t;}
+const isMob=()=>window.innerWidth<769;
 
-/* LOCALSTORAGE */
-function loadKeys(){const gv=localStorage.getItem('_gk')||'',sv=localStorage.getItem('_sk')||'';if(gv){$('gk').value=gv;$('gks').style.display='inline';}if(sv){$('sk').value=sv;$('sks').style.display='inline';}}
-function bindKeys(){$('gk').addEventListener('input',e=>{localStorage.setItem('_gk',e.target.value);$('gks').style.display=e.target.value?'inline':'none';});$('sk').addEventListener('input',e=>{localStorage.setItem('_sk',e.target.value);$('sks').style.display=e.target.value?'inline':'none';});}
+function getName(t){t=t.trim().toUpperCase();return NAMES[t]||(t.includes('.TWO')?NAMES[t.replace('.TWO','.TW')]:t.includes('.TW')?NAMES[t.replace('.TW','.TWO')]:null)||t;}
 
-/* CORS */
-async function cget(url){const ps=[u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`];for(const p of ps){try{const r=await fetch(p(url),{signal:AbortSignal.timeout(25000)});if(!r.ok)continue;return JSON.parse(await r.text());}catch{}}throw new Error('Fetch failed');}
+/* ── LOCALSTORAGE ── */
+function loadKeys(){
+  const g=localStorage.getItem('_gk')||'', s=localStorage.getItem('_sk')||'';
+  if(g){$('gk-inp').value=g; $('gk-saved').style.display='inline';}
+  if(s){$('sk-inp').value=s; $('sk-saved').style.display='inline';}
+}
+function bindKeyPersist(){
+  $('gk-inp').addEventListener('input',e=>{localStorage.setItem('_gk',e.target.value); $('gk-saved').style.display=e.target.value?'inline':'none';});
+  $('sk-inp').addEventListener('input',e=>{localStorage.setItem('_sk',e.target.value); $('sk-saved').style.display=e.target.value?'inline':'none';});
+}
 
-/* YAHOO */
-async function fHist(t){const p2=Math.floor(Date.now()/1000),p1=p2-25*365*24*3600;const d=await cget(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?interval=1d&period1=${p1}&period2=${p2}`);const res=d.chart?.result?.[0];if(!res)throw new Error('No data');const ts=res.timestamp,q=res.indicators.quote[0],ac=res.indicators.adjclose?.[0]?.adjclose,raw=ac||q.close,o={ts:[],o:[],h:[],l:[],c:[],v:[]};for(let i=0;i<raw.length;i++){if(raw[i]!=null&&!isNaN(raw[i])){o.ts.push(ts[i]);o.o.push(q.open[i]??raw[i]);o.h.push(q.high[i]??raw[i]);o.l.push(q.low[i]??raw[i]);o.c.push(raw[i]);o.v.push(q.volume[i]??0);}}return o;}
-async function fFund(t){try{const d=await cget(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail,defaultKeyStatistics,financialData`);const r=d.quoteSummary?.result?.[0];if(!r)return{};return{eps:r.defaultKeyStatistics?.trailingEps?.raw??null,pe:r.summaryDetail?.trailingPE?.raw??null,pb:r.summaryDetail?.priceToBook?.raw??null,rev:r.financialData?.revenueGrowth?.raw??0};}catch{return{};}}
-async function fYNews(t){try{const d=await cget(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(t)}&newsCount=6&quotesCount=0`);return(d.news||[]).map((n,i)=>`${i+1}. ${n.title}\n   ${n.summary||''}`).join('\n');}catch{return'';}}
-async function fSerper(t,name,key){const tw=t.includes('.TW')||t.includes('.TWO');const q=tw?`${name} ${t} 股價 新聞 法說會 外資`:`${t} ${name} stock news earnings`;const r=await fetch('https://google.serper.dev/search',{method:'POST',headers:{'X-API-KEY':key,'Content-Type':'application/json'},body:JSON.stringify({q,gl:tw?'tw':'us',hl:tw?'zh-tw':'en',num:6,tbs:'qdr:w'})});if(!r.ok)throw new Error('Serper '+r.status);return((await r.json()).organic||[]).map((x,i)=>`${i+1}. ${x.title}\n   ${x.snippet||''}`).join('\n');}
+/* ── CORS FETCH ── */
+async function cget(url){
+  for(const px of[u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`]){
+    try{const r=await fetch(px(url),{signal:AbortSignal.timeout(25000)});if(!r.ok)continue;return JSON.parse(await r.text());}catch{}
+  }
+  throw new Error('Fetch failed');
+}
 
-/* INDICATORS */
+/* ── YAHOO ── */
+async function fetchHist(t){
+  const p2=Math.floor(Date.now()/1000),p1=p2-25*365*24*3600;
+  const d=await cget(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?interval=1d&period1=${p1}&period2=${p2}`);
+  const res=d.chart?.result?.[0]; if(!res)throw new Error('No data');
+  const ts=res.timestamp,q=res.indicators.quote[0],ac=res.indicators.adjclose?.[0]?.adjclose,raw=ac||q.close;
+  const o={ts:[],o:[],h:[],l:[],c:[],v:[]};
+  for(let i=0;i<raw.length;i++){if(raw[i]!=null&&!isNaN(raw[i])){o.ts.push(ts[i]);o.o.push(q.open[i]??raw[i]);o.h.push(q.high[i]??raw[i]);o.l.push(q.low[i]??raw[i]);o.c.push(raw[i]);o.v.push(q.volume[i]??0);}}
+  return o;
+}
+async function fetchFund(t){
+  try{
+    const d=await cget(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail,defaultKeyStatistics,financialData`);
+    const r=d.quoteSummary?.result?.[0]; if(!r)return{};
+    return{eps:r.defaultKeyStatistics?.trailingEps?.raw??null,pe:r.summaryDetail?.trailingPE?.raw??null,pb:r.summaryDetail?.priceToBook?.raw??null,rev:r.financialData?.revenueGrowth?.raw??0};
+  }catch{return{};}
+}
+async function fetchYNews(t){
+  try{
+    const d=await cget(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(t)}&newsCount=6&quotesCount=0`);
+    return(d.news||[]).map((n,i)=>`${i+1}. ${n.title}\n   ${n.summary||''}`).join('\n');
+  }catch{return'';}
+}
+async function fetchSerper(t,name,key){
+  const tw=t.includes('.TW')||t.includes('.TWO');
+  const q=tw?`${name} ${t} 股價 新聞 法說會 外資`:`${t} ${name} stock news earnings analyst`;
+  const r=await fetch('https://google.serper.dev/search',{method:'POST',headers:{'X-API-KEY':key,'Content-Type':'application/json'},body:JSON.stringify({q,gl:tw?'tw':'us',hl:tw?'zh-tw':'en',num:6,tbs:'qdr:w'})});
+  if(!r.ok)throw new Error('Serper '+r.status);
+  return((await r.json()).organic||[]).map((x,i)=>`${i+1}. ${x.title}\n   ${x.snippet||''}`).join('\n');
+}
+
+/* ── INDICATORS ── */
 function sma(a,p){const n=a.length,r=new Array(n).fill(null);if(n<p)return r;let s=0;for(let i=0;i<p;i++)s+=a[i];r[p-1]=s/p;for(let i=p;i<n;i++){s+=a[i]-a[i-p];r[i]=s/p;}return r;}
 function ema(a,sp){const k=2/(sp+1),r=new Array(a.length);r[0]=a[0];for(let i=1;i<a.length;i++)r[i]=a[i]*k+r[i-1]*(1-k);return r;}
 function calcRsi(c){const n=c.length,r=new Array(n).fill(null);const a=1/14;let ag=0,al=0;for(let i=1;i<n;i++){const d=c[i]-c[i-1],g=Math.max(d,0),l=Math.max(-d,0);ag=i===1?g:g*a+ag*(1-a);al=i===1?l:l*a+al*(1-a);r[i]=al===0?100:100-100/(1+ag/al);}return r;}
 function calcMh(c){const e12=ema(c,12),e26=ema(c,26),m=e12.map((v,i)=>v-e26[i]),s=ema(m,9);return m.map((v,i)=>v-s[i]);}
-function bInd(raw){return{...raw,s20:sma(raw.c,20),s60:sma(raw.c,60),s240:sma(raw.c,240),s1200:sma(raw.c,1200),s4800:sma(raw.c,4800),rsi:calcRsi(raw.c),mh:calcMh(raw.c),vs5:sma(raw.v,5)};}
+function buildInd(raw){return{...raw,s20:sma(raw.c,20),s60:sma(raw.c,60),s240:sma(raw.c,240),s1200:sma(raw.c,1200),s4800:sma(raw.c,4800),rsi:calcRsi(raw.c),mh:calcMh(raw.c),vs5:sma(raw.v,5)};}
 
-/* SCORING */
-function scr(d,i,f,tpe,isUS){if(i<6)return{sc:0,sig:'⚪ 觀望',why:''};const{o,c,v,s240,rsi,mh,vs5}=d;let sc=0,wy=[];const{eps=null,pe=null,pb=null,rev=0}=f||{};if(eps!==null){if(eps<0)sc-=3;else{const up=(eps*tpe-c[i])/c[i];if(up>0.2){wy.push('股價低估');sc+=2;}else if(up<-0.2)sc-=1.5;}}const pl=isUS?35:20;if(pe){if(pe>0&&pe<pl){wy.push(`PE<${pl}`);sc+=1;}else if(pe>pl*2.5){wy.push('PE過高');sc-=1;}}if(pb&&pb<1.5){wy.push('PB低');sc+=1;}const rg=rev||0;if(rg>0.2){wy.push('營收飆');sc+=1;}else if(rg<-0.1)sc-=1;const s=s240[i],sp=s240[i-1];if(s!==null&&c[i]>s){if(sp!==null&&c[i-1]<sp){wy.push('🚀突破年線');sc+=2.5;}else sc+=1;}else if(s!==null&&sp!==null&&c[i-1]>sp){wy.push('跌破年線');sc-=2;}if(c[i]>o[i]&&c[i-1]>o[i-1]&&c[i-2]>o[i-2]&&c[i]>c[i-1]){wy.push('🔥連三紅');sc+=2;}if(vs5[i]!==null&&v[i]>vs5[i]*1.8&&c[i]>o[i]){wy.push('💰爆量');sc+=1.5;}if(mh[i-1]!==null&&mh[i-1]<0&&mh[i]>0){wy.push('MACD翻紅');sc+=1.5;}if(rsi[i]!==null&&rsi[i]<30){wy.push('RSI超賣');sc+=1;}if(rsi[i]!==null&&rsi[i]>75){wy.push('RSI過熱');sc-=2;}let sig;if(sc>=4)sig='💎 強力買進';else if(sc>=1.5)sig='✅ 偏多';else if(sc<=-3)sig='🚨 賣出';else if(sc<=-1)sig='⚠️ 偏空';else sig='⚪ 觀望';return{sc,sig,why:wy.join(', ')};}
-function gmChk(d,i,f){const{eps=null,rev=0}=f||{};if(!eps||eps<=0)return{isGem:false,r:''};const{c,s240,s1200,s4800}=d,p=c[i];if(s4800[i]!==null&&p<s4800[i])return{isGem:true,r:'🔥跌破20年線'};if(s1200[i]!==null&&p<s1200[i])return{isGem:true,r:'跌破5年線'};if(s240[i]!==null&&p<s240[i]&&(rev||0)>-0.05)return{isGem:true,r:'跌破年線'};return{isGem:false,r:''};}
+/* ── SCORING ── */
+function score(d,i,f,tpe,isUS){
+  if(i<6)return{sc:0,sig:'⚪ 觀望',why:''};
+  const{o,c,v,s240,rsi,mh,vs5}=d;let sc=0,wy=[];
+  const{eps=null,pe=null,pb=null,rev=0}=f||{};
+  if(eps!==null){if(eps<0)sc-=3;else{const up=(eps*tpe-c[i])/c[i];if(up>0.2){wy.push('股價低估');sc+=2;}else if(up<-0.2)sc-=1.5;}}
+  const pl=isUS?35:20;
+  if(pe){if(pe>0&&pe<pl){wy.push(`PE<${pl}`);sc+=1;}else if(pe>pl*2.5){wy.push('PE過高');sc-=1;}}
+  if(pb&&pb<1.5){wy.push('PB低');sc+=1;}
+  const rg=rev||0; if(rg>0.2){wy.push('營收飆');sc+=1;}else if(rg<-0.1)sc-=1;
+  const s=s240[i],sp=s240[i-1];
+  if(s!==null&&c[i]>s){if(sp!==null&&c[i-1]<sp){wy.push('🚀突破年線');sc+=2.5;}else sc+=1;}
+  else if(s!==null&&sp!==null&&c[i-1]>sp){wy.push('跌破年線');sc-=2;}
+  if(c[i]>o[i]&&c[i-1]>o[i-1]&&c[i-2]>o[i-2]&&c[i]>c[i-1]){wy.push('🔥連三紅');sc+=2;}
+  if(vs5[i]!==null&&v[i]>vs5[i]*1.8&&c[i]>o[i]){wy.push('💰爆量');sc+=1.5;}
+  if(mh[i-1]!==null&&mh[i-1]<0&&mh[i]>0){wy.push('MACD翻紅');sc+=1.5;}
+  if(rsi[i]!==null&&rsi[i]<30){wy.push('RSI超賣');sc+=1;}
+  if(rsi[i]!==null&&rsi[i]>75){wy.push('RSI過熱');sc-=2;}
+  let sig; if(sc>=4)sig='💎 強力買進';else if(sc>=1.5)sig='✅ 偏多';else if(sc<=-3)sig='🚨 賣出';else if(sc<=-1)sig='⚠️ 偏空';else sig='⚪ 觀望';
+  return{sc,sig,why:wy.join(', ')};
+}
+function gemCheck(d,i,f){
+  const{eps=null,rev=0}=f||{}; if(!eps||eps<=0)return{isGem:false,r:''};
+  const{c,s240,s1200,s4800}=d,p=c[i];
+  if(s4800[i]!==null&&p<s4800[i])return{isGem:true,r:'🔥跌破20年線'};
+  if(s1200[i]!==null&&p<s1200[i])return{isGem:true,r:'跌破5年線'};
+  if(s240[i]!==null&&p<s240[i]&&(rev||0)>-0.05)return{isGem:true,r:'跌破年線'};
+  return{isGem:false,r:''};
+}
 
-/* ANALYSIS */
-async function runAnalysis(){if(S.run)return;S.run=true;const tks=$('tks').value.split(',').map(t=>t.trim().toUpperCase()).filter(Boolean),tpe=+$('pes').value,btn=$('run');btn.disabled=true;btn.textContent='⏳ 分析中...';$('pw').style.display='flex';const res=[];S.cache={};for(let idx=0;idx<tks.length;idx++){const t=tks[idx];$('pib').style.width=Math.round((idx+.5)/tks.length*100)+'%';$('plb').textContent=`${t}  (${idx+1}/${tks.length})`;try{const[hR,fR]=await Promise.allSettled([fHist(t),fFund(t)]);if(hR.status!=='fulfilled'){console.warn(t,hR.reason);continue;}const raw=hR.value;if(raw.c.length<250)continue;const d=bInd(raw);S.cache[t]=d;const f=(fR.status==='fulfilled'?fR.value:{})||{};const isUS=!t.includes('.TW')&&!t.includes('.TWO');const n=d.c.length,i=n-1;const r0=scr(d,i,f,tpe,isUS),r1=scr(d,i-1,f,tpe,isUS),r2=scr(d,i-2,f,tpe,isUS);const roi=(d.c[i]-d.c[i-2])/d.c[i-2];let val='➖';if(r2.sig.includes('買進')||r2.sig.includes('偏多'))val=roi>0?`✅ 準 (+${(roi*100).toFixed(0)}%)`:`❌ 誤 (${(roi*100).toFixed(0)}%)`;else if(r2.sig.includes('賣出')||r2.sig.includes('偏空'))val=roi<0?`✅ 準 (${(roi*100).toFixed(0)}%)`:`❌ 誤 (+${(roi*100).toFixed(0)}%)`;const g=gmChk(d,i,f);res.push({ticker:t,name:gn(t),price:d.c[i],chg:(d.c[i]-d.c[i-1])/d.c[i-1],sig0:r0.sig,sig1:r1.sig,sig2:r2.sig,why:r0.why,val,fair:(f.eps&&f.eps>0)?(f.eps*tpe).toFixed(2):'—',score:r0.sc,isGem:g.isGem,gemR:g.r,fund:f});}catch(e){console.warn('Skip',t,e.message);}if(idx<tks.length-1)await sleep(120);}S.res=res;$('pw').style.display='none';renderAll(res);fillCS(res);$('tst').textContent=`${res.length} 支 | ${new Date().toLocaleTimeString()}`;btn.disabled=false;btn.textContent='🔄 重新分析';S.run=false;}
+/* ── MAIN RUN ── */
+async function runAnalysis(){
+  if(ST.busy)return; ST.busy=true;
+  const tks=$('tks-inp').value.split(',').map(t=>t.trim().toUpperCase()).filter(Boolean);
+  const tpe=+$('pe-range').value;
+  const btn=$('run-btn'); btn.disabled=true; btn.textContent='⏳ 分析中...';
+  $('prog-box').style.display='flex';
+  ST.res=[]; ST.cache={};
+  const res=[];
+  for(let idx=0;idx<tks.length;idx++){
+    const t=tks[idx];
+    $('prog-fill').style.width=Math.round((idx+.5)/tks.length*100)+'%';
+    $('prog-lbl').textContent=`${t}  (${idx+1} / ${tks.length})`;
+    try{
+      const[hR,fR]=await Promise.allSettled([fetchHist(t),fetchFund(t)]);
+      if(hR.status!=='fulfilled')continue;
+      const raw=hR.value; if(raw.c.length<250)continue;
+      const d=buildInd(raw); ST.cache[t]=d;
+      const f=(fR.status==='fulfilled'?fR.value:{})||{};
+      const isUS=!t.includes('.TW')&&!t.includes('.TWO');
+      const n=d.c.length,i=n-1;
+      const r0=score(d,i,f,tpe,isUS),r1=score(d,i-1,f,tpe,isUS),r2=score(d,i-2,f,tpe,isUS);
+      const roi=(d.c[i]-d.c[i-2])/d.c[i-2];
+      let val='➖';
+      if(r2.sig.includes('買進')||r2.sig.includes('偏多'))val=roi>0?`✅ 準 (+${(roi*100).toFixed(0)}%)`:`❌ 誤 (${(roi*100).toFixed(0)}%)`;
+      else if(r2.sig.includes('賣出')||r2.sig.includes('偏空'))val=roi<0?`✅ 準 (${(roi*100).toFixed(0)}%)`:`❌ 誤 (+${(roi*100).toFixed(0)}%)`;
+      const g=gemCheck(d,i,f);
+      res.push({ticker:t,name:getName(t),price:d.c[i],chg:(d.c[i]-d.c[i-1])/d.c[i-1],sig0:r0.sig,sig1:r1.sig,sig2:r2.sig,why:r0.why,val,fair:(f.eps&&f.eps>0)?(f.eps*tpe).toFixed(2):'—',score:r0.sc,isGem:g.isGem,gemR:g.r,fund:f});
+    }catch(e){console.warn('Skip',t,e.message);}
+    if(idx<tks.length-1)await sleep(120);
+  }
+  ST.res=res;
+  $('prog-box').style.display='none';
+  renderAll(res); fillChartSel(res);
+  $('nav-st').textContent=`${res.length} 支 | ${new Date().toLocaleTimeString()}`;
+  btn.disabled=false; btn.textContent='🔄 重新分析'; ST.busy=false;
+}
 
-/* RENDER */
-function sCls(v){if(v.includes('買進')||v.includes('偏多'))return's-buy';if(v.includes('賣出')||v.includes('偏空'))return's-sell';return's-neu';}
-function pCls(v){if(v.includes('買進')||v.includes('偏多'))return'pl pl-b';if(v.includes('賣出')||v.includes('偏空'))return'pl pl-s';return'pl pl-n';}
+/* ── RENDER ── */
+function sCls(v){return v.includes('買進')||v.includes('偏多')?'s-b':v.includes('賣出')||v.includes('偏空')?'s-s':'s-n';}
+function pCls(v){return v.includes('買進')||v.includes('偏多')?'pill pill-b':v.includes('賣出')||v.includes('偏空')?'pill pill-s':'pill pill-n';}
 
-function rTable(rows,sg){if(!rows.length)return'<div class="empty">目前無符合條件的股票</div>';const gh=sg?'<th>低估狀態</th>':'';const gd=r=>sg?`<td class="c-gem">${r.gemR}</td>`:'';return`<div class="ts"><table class="dt"><thead><tr><th>代號</th><th>名稱</th><th>現價</th><th>漲跌</th><th>今日訊號</th>${gh}<th>昨日</th><th>前日</th><th>策略理由</th><th>T-2驗證</th><th>合理估值</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td class="c-tick">${r.ticker}</td><td class="c-name">${r.name}</td><td class="c-num">${r.price.toFixed(2)}</td><td class="${r.chg>=0?'c-pos':'c-neg'}">${r.chg>=0?'+':''}${(r.chg*100).toFixed(2)}%</td><td class="${sCls(r.sig0)}">${r.sig0}</td>${gd(r)}<td class="${sCls(r.sig1)}">${r.sig1}</td><td class="${sCls(r.sig2)}">${r.sig2}</td><td class="c-why">${r.why||'—'}</td><td class="s-v">${r.val}</td><td class="c-num">${r.fair}</td><td><button class="btn-ai" onclick="qAI('${r.ticker}')">🔍 AI</button></td></tr>`).join('')}</tbody></table></div>`;}
+function mkTable(rows,sg){
+  if(!rows.length)return'<div class="empty-msg">目前無符合條件的股票</div>';
+  const gh=sg?'<th>低估狀態</th>':'';
+  const gd=r=>sg?`<td class="c-gm">${r.gemR}</td>`:'';
+  return`<div class="tbl-wrap"><table class="dtbl"><thead><tr><th>代號</th><th>名稱</th><th>現價</th><th>漲跌幅</th><th>今日訊號</th>${gh}<th>昨日訊號</th><th>前日訊號</th><th>策略理由</th><th>T-2驗證</th><th>合理估值</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td class="c-tk">${r.ticker}</td><td class="c-nm">${r.name}</td><td class="c-nu">${r.price.toFixed(2)}</td><td class="${r.chg>=0?'c-up':'c-dn'}">${r.chg>=0?'+':''}${(r.chg*100).toFixed(2)}%</td><td class="${sCls(r.sig0)}">${r.sig0}</td>${gd(r)}<td class="${sCls(r.sig1)}">${r.sig1}</td><td class="${sCls(r.sig2)}">${r.sig2}</td><td class="c-wy">${r.why||'—'}</td><td class="s-v">${r.val}</td><td class="c-nu">${r.fair}</td><td><button class="btn-ai" onclick="qAI('${r.ticker}')">🔍 AI</button></td></tr>`).join('')}</tbody></table></div>`;
+}
 
-function rCards(rows,sg){if(!rows.length)return'<div class="empty">目前無符合條件的股票</div>';return`<div class="cl">${rows.map(r=>`<div class="sc"><div class="sc-t"><div><div class="sc-tc">${r.ticker}</div><div class="sc-tn">${r.name}</div></div><div class="sc-pr"><div class="p">${r.price.toFixed(2)}</div><div class="c ${r.chg>=0?'c-pos':'c-neg'}">${r.chg>=0?'+':''}${(r.chg*100).toFixed(2)}%</div></div></div><div class="pls"><span class="${pCls(r.sig0)}">${r.sig0}</span>${sg&&r.gemR?`<span class="pl pl-g">${r.gemR}</span>`:''}<span class="pl pl-n" style="font-size:11px">${r.val}</span></div>${r.why?`<div class="sc-w">📝 ${r.why}</div>`:''}<div class="sc-f"><span class="sc-m">估值 ${r.fair} · 評 ${r.score.toFixed(1)}</span><button class="btn-ai" onclick="qAI('${r.ticker}')">🔍 AI 分析</button></div></div>`).join('')}</div>`;}
+function mkCards(rows,sg){
+  if(!rows.length)return'<div class="empty-msg">目前無符合條件的股票</div>';
+  return`<div class="card-list">${rows.map(r=>`<div class="stock-card"><div class="sc-top"><div class="sc-left"><div class="sc-tk">${r.ticker}</div><div class="sc-nm">${r.name}</div></div><div class="sc-right"><div class="sc-p">${r.price.toFixed(2)}</div><div class="sc-c ${r.chg>=0?'c-up':'c-dn'}">${r.chg>=0?'+':''}${(r.chg*100).toFixed(2)}%</div></div></div><div class="pills"><span class="${pCls(r.sig0)}">${r.sig0}</span>${sg&&r.gemR?`<span class="pill pill-g">${r.gemR}</span>`:''}<span class="pill pill-n" style="font-size:12px">${r.val}</span></div>${r.why?`<div class="sc-why">📝 ${r.why}</div>`:''}<div class="sc-foot"><span class="sc-meta">估值 ${r.fair} · 評分 ${r.score.toFixed(1)}</span><button class="btn-ai" onclick="qAI('${r.ticker}')">🔍 AI 分析</button></div></div>`).join('')}</div>`;
+}
 
-function rSec(id,rows,sg){$(id).innerHTML=mob()?rCards(rows,sg):rTable(rows,sg);}
-function renderAll(res){const gems=res.filter(r=>r.isGem).sort((a,b)=>b.score-a.score),buys=res.filter(r=>r.score>=2.5).sort((a,b)=>b.score-a.score),sells=res.filter(r=>r.score<=-2).sort((a,b)=>a.score-b.score),watch=res.filter(r=>r.score>-2&&r.score<2.5);$('cg').textContent=gems.length;$('cb').textContent=buys.length;$('cs').textContent=sells.length;$('cw2').textContent=watch.length;rSec('s-gem',gems,true);rSec('s-buy',buys,false);rSec('s-sell',sells,false);rSec('s-watch',watch,false);}
-window.addEventListener('resize',()=>{if(S.res.length)renderAll(S.res);});
+function sec(id,rows,sg){$(id).innerHTML=isMob()?mkCards(rows,sg):mkTable(rows,sg);}
+function renderAll(res){
+  const gems=res.filter(r=>r.isGem).sort((a,b)=>b.score-a.score);
+  const buys=res.filter(r=>r.score>=2.5).sort((a,b)=>b.score-a.score);
+  const sells=res.filter(r=>r.score<=-2).sort((a,b)=>a.score-b.score);
+  const watch=res.filter(r=>r.score>-2&&r.score<2.5);
+  $('cnt-g').textContent=gems.length; $('cnt-b').textContent=buys.length;
+  $('cnt-s').textContent=sells.length; $('cnt-w').textContent=watch.length;
+  sec('sub-gem',gems,true); sec('sub-buy',buys,false);
+  sec('sub-sell',sells,false); sec('sub-watch',watch,false);
+}
+window.addEventListener('resize',()=>{if(ST.res.length)renderAll(ST.res);});
 
-/* CHART */
-function fillCS(res){$('csel').innerHTML='<option value="">— 從分析結果選擇 —</option>'+res.map(r=>`<option value="${r.ticker}">${r.name} (${r.ticker})</option>`).join('');}
-async function drawChart(t){const w=$('cw');w.innerHTML='<div class="ld"><div class="spin"></div> 載入圖表資料...</div>';try{let d=S.cache[t.toUpperCase()];if(!d){const raw=await fHist(t);d=bInd(raw);}const n=d.c.length,disp=Math.min(n,750),st=n-disp,toDate=ts=>new Date(ts*1000).toISOString().split('T')[0],dates=d.ts.slice(st).map(toDate);const ln=(vals,col,wid,dash,name)=>({type:'scatter',mode:'lines',x:dates,y:vals.slice(st),line:{color:col,width:wid,dash:dash||'solid'},name,connectgaps:false});Plotly.newPlot('cw',[{type:'candlestick',x:dates,open:d.o.slice(st),high:d.h.slice(st),low:d.l.slice(st),close:d.c.slice(st),name:'K線',increasing:{line:{color:'#72c78e'},fillcolor:'rgba(114,199,142,.7)'},decreasing:{line:{color:'#d96060'},fillcolor:'rgba(217,96,96,.7)'}},ln(d.s60,'#70bfb0',1,'solid','季線(60)'),ln(d.s240,'#c8923a',2,'solid','年線(240)'),ln(d.s1200,'#e8a84a',2,'dot','5年線'),ln(d.s4800,'#d96060',3,'dash','🔥20年線')],[{paper_bgcolor:'#181410',plot_bgcolor:'#181410',font:{color:'#c5b5a0',family:"'JetBrains Mono',monospace",size:11},title:{text:`${gn(t)} (${t})`,font:{size:14,color:'#ede3d5',family:"'Cormorant Garamond',serif"}},xaxis:{rangeslider:{visible:false},gridcolor:'#3d3228',linecolor:'#3d3228',color:'#8a7869'},yaxis:{gridcolor:'#3d3228',linecolor:'#3d3228',color:'#8a7869'},legend:{bgcolor:'rgba(0,0,0,0)',font:{size:11}},margin:{t:44,b:40,l:60,r:16},height:460}][0],{responsive:true,displayModeBar:true});}catch(e){w.innerHTML=`<div class="empty">❌ 無法載入：${e.message}</div>`;}}
+/* ── CHART ── */
+function fillChartSel(res){$('chart-sel').innerHTML='<option value="">— 從分析結果選擇 —</option>'+res.map(r=>`<option value="${r.ticker}">${r.name} (${r.ticker})</option>`).join('');}
 
-/* AI NEWS */
-function md2h(t){const e=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),ls=e(t).split('\n'),o=[];let ul=false;for(const L of ls){const tr=L.trim();if(tr.startsWith('## ')){if(ul){o.push('</ul>');ul=false;}o.push(`<h2>${tr.slice(3).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</h2>`);}else if(tr.startsWith('# ')){if(ul){o.push('</ul>');ul=false;}o.push(`<h2>${tr.slice(2)}</h2>`);}else if(tr.startsWith('- ')||tr.startsWith('* ')){if(!ul){o.push('<ul>');ul=true;}o.push(`<li>${tr.slice(2).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</li>`);}else if(tr===''){if(ul){o.push('</ul>');ul=false;}o.push('<br>');}else{if(ul){o.push('</ul>');ul=false;}o.push(`<p>${L.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</p>`);}}if(ul)o.push('</ul>');return o.join('\n');}
+async function drawChart(t){
+  const box=$('chart-box'); box.innerHTML='<div class="loading"><div class="spin"></div> 載入資料中...</div>';
+  try{
+    let d=ST.cache[t.toUpperCase()]; if(!d){const raw=await fetchHist(t);d=buildInd(raw);}
+    const n=d.c.length,disp=Math.min(n,750),st=n-disp;
+    const toD=ts=>new Date(ts*1000).toISOString().split('T')[0];
+    const dates=d.ts.slice(st).map(toD);
+    const ln=(vals,col,w,dash,name)=>({type:'scatter',mode:'lines',x:dates,y:vals.slice(st),line:{color:col,width:w,dash:dash||'solid'},name,connectgaps:false});
+    Plotly.newPlot('chart-box',[
+      {type:'candlestick',x:dates,open:d.o.slice(st),high:d.h.slice(st),low:d.l.slice(st),close:d.c.slice(st),name:'K線',
+       increasing:{line:{color:'#5dba80'},fillcolor:'rgba(93,186,128,0.75)'},
+       decreasing:{line:{color:'#d06060'},fillcolor:'rgba(208,96,96,0.75)'}},
+      ln(d.s60,'#5ab8a8',1.5,'solid','季線 60MA'),
+      ln(d.s240,'#d4972a',2,'solid','年線 240MA'),
+      ln(d.s1200,'#e8b040',2,'dot','5年線'),
+      ln(d.s4800,'#d06060',3,'dash','🔥 20年線'),
+    ],{
+      paper_bgcolor:'#1e1710',plot_bgcolor:'#1e1710',
+      font:{color:'#cbb99a',family:"'JetBrains Mono',monospace",size:11},
+      title:{text:`${getName(t)} (${t})`,font:{size:16,color:'#f0e6d6',family:"'Noto Serif TC',serif"}},
+      xaxis:{rangeslider:{visible:false},gridcolor:'#3d2f1e',linecolor:'#3d2f1e',color:'#9a8268'},
+      yaxis:{gridcolor:'#3d2f1e',linecolor:'#3d2f1e',color:'#9a8268'},
+      legend:{bgcolor:'rgba(0,0,0,0)',font:{size:11,color:'#cbb99a'}},
+      margin:{t:48,b:42,l:64,r:18}, height:460,
+    },{responsive:true,displayModeBar:true});
+  }catch(e){box.innerHTML=`<div class="empty-msg">❌ 無法載入：${e.message}</div>`;}
+}
 
-async function callGemini(key,prompt){for(const m of['gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-pro']){try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});if(r.status===404)continue;if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${r.status}`);}const d=await r.json();return d.candidates[0].content.parts[0].text;}catch(e){if(e.message?.includes('404'))continue;throw e;}}throw new Error('找不到可用 Gemini 模型，請確認 API Key');}
+/* ── AI NEWS ── */
+function md2h(t){
+  const e=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lines=e(t).split('\n'); const out=[]; let ul=false;
+  for(const L of lines){
+    const tr=L.trim();
+    if(tr.startsWith('## ')){if(ul){out.push('</ul>');ul=false;}out.push(`<h2>${tr.slice(3).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</h2>`);}
+    else if(tr.startsWith('# ')){if(ul){out.push('</ul>');ul=false;}out.push(`<h2>${tr.slice(2)}</h2>`);}
+    else if(tr.startsWith('- ')||tr.startsWith('* ')){if(!ul){out.push('<ul>');ul=true;}out.push(`<li>${tr.slice(2).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</li>`);}
+    else if(tr===''){if(ul){out.push('</ul>');ul=false;}out.push('<br>');}
+    else{if(ul){out.push('</ul>');ul=false;}out.push(`<p>${L.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</p>`);}
+  }
+  if(ul)out.push('</ul>'); return out.join('\n');
+}
 
-async function runNews(t){const gkey=$('gk').value.trim(),skey=$('sk').value.trim();if(!gkey){alert('請先在左側填入 Gemini API Key');return;}const name=gn(t),nr=$('nr2');nr.innerHTML='<div class="ld"><div class="spin"></div> 搜尋最新新聞中...</div>';let news='',badge='';if(skey){try{news=await fSerper(t,name,skey);badge='<span class="sbdg bdg-s">Serper</span>';}catch(e){console.warn(e.message);}}if(!news){news=await fYNews(t);badge='<span class="sbdg bdg-y">Yahoo News</span>';}if(!news)news='（無法取得近期新聞，請參考技術面評分）';nr.innerHTML='<div class="ld"><div class="spin"></div> Gemini AI 深度分析中...</div>';try{const row=S.res.find(r=>r.ticker===t);const si=row?`\n【技術面評分快照】\n- 評分：${row.score.toFixed(1)}\n- 訊號：${row.sig0}\n- 理由：${row.why}\n- 合理估值：${row.fair}`:'';const prompt=`你是一位華爾街資深操盤手兼基本面分析師。請根據以下資料對「${name} (${t})」撰寫投資分析報告。\n${si}\n【最新市場資訊】\n${news}\n\n請以**繁體中文**撰寫，格式如下：\n\n## 🔥 市場焦點\n條列最近 1-2 週的關鍵事件\n\n## ⚖️ 多空分析\n**✅ 利多理由**（2-3 點）\n**🔻 風險隱憂**（2-3 點）\n\n## 🎯 投資建議\n明確操作建議，說明買點區間或停損考量。`;const report=await callGemini(gkey,prompt);const smr=row?`<div class="sm-bar"><div class="sm-i"><span class="sm-v">${row.score.toFixed(1)}</span><span class="sm-l">評分</span></div><div class="sm-i"><span class="sm-v" style="font-size:13px">${row.sig0}</span><span class="sm-l">今日訊號</span></div><div class="sm-i"><span class="sm-v">$${row.price.toFixed(2)}</span><span class="sm-l">現價</span></div><div class="sm-i"><span class="sm-v">$${row.fair}</span><span class="sm-l">合理估值</span></div></div>`:'';nr.innerHTML=`<div class="ac"><div class="ac-h"><span class="tc">${t}</span><span class="nl">${name}</span>${badge}</div><div class="ac-bd">${md2h(report)}</div>${smr}</div><details class="nr"><summary>📋 查看原始新聞資料</summary><pre>${news}</pre></details>`;}catch(e){nr.innerHTML=`<div class="empty">❌ 分析失敗：${e.message}</div>`;}}
+async function callGemini(key,prompt){
+  for(const m of['gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-pro']){
+    try{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+      if(r.status===404)continue; if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${r.status}`);}
+      return(await r.json()).candidates[0].content.parts[0].text;
+    }catch(e){if(e.message?.includes('404'))continue; throw e;}
+  }
+  throw new Error('找不到可用 Gemini 模型，請確認 API Key');
+}
 
-function qAI(t){$('ni2').value=t;document.querySelectorAll('.tb').forEach(b=>b.classList.toggle('on',b.dataset.tab==='news'));document.querySelectorAll('.tp').forEach(p=>p.classList.toggle('on',p.id==='t-news'));closeSB();runNews(t);}
+async function runNews(t){
+  const gk=$('gk-inp').value.trim(), sk=$('sk-inp').value.trim();
+  if(!gk){alert('請先在左側填入 Gemini API Key');return;}
+  const name=getName(t), nr=$('news-result');
+  nr.innerHTML='<div class="loading"><div class="spin"></div> 搜尋最新新聞中...</div>';
+  let news='', badge='';
+  if(sk){try{news=await fetchSerper(t,name,sk);badge='<span class="src-tag src-s">Serper</span>';}catch(e){console.warn(e.message);}}
+  if(!news){news=await fetchYNews(t);badge='<span class="src-tag src-y">Yahoo News</span>';}
+  if(!news)news='（無法取得近期新聞，請參考技術面評分）';
+  nr.innerHTML='<div class="loading"><div class="spin"></div> Gemini AI 深度分析中...</div>';
+  try{
+    const row=ST.res.find(r=>r.ticker===t);
+    const si=row?`\n【技術面評分快照】\n- 評分：${row.score.toFixed(1)}\n- 訊號：${row.sig0}\n- 理由：${row.why}\n- 合理估值：${row.fair}`:'';
+    const prompt=`你是一位華爾街資深操盤手兼基本面分析師。請根據以下資料對「${name} (${t})」撰寫投資分析報告。\n${si}\n【最新市場資訊】\n${news}\n\n請以**繁體中文**撰寫，格式如下：\n\n## 🔥 市場焦點\n條列最近 1-2 週的關鍵事件\n\n## ⚖️ 多空分析\n**✅ 利多理由**（2-3 點）\n**🔻 風險隱憂**（2-3 點）\n\n## 🎯 投資建議\n明確操作建議，說明買點區間或停損考量。`;
+    const report=await callGemini(gk,prompt);
+    const smr=row?`<div class="score-strip"><div class="sm-cell"><span class="sm-val">${row.score.toFixed(1)}</span><span class="sm-lbl">評分</span></div><div class="sm-cell"><span class="sm-val" style="font-size:13px">${row.sig0}</span><span class="sm-lbl">今日訊號</span></div><div class="sm-cell"><span class="sm-val">$${row.price.toFixed(2)}</span><span class="sm-lbl">現價</span></div><div class="sm-cell"><span class="sm-val">$${row.fair}</span><span class="sm-lbl">合理估值</span></div></div>`:'';
+    nr.innerHTML=`<div class="a-card"><div class="a-hdr"><span class="a-chip">${t}</span><span class="a-name">${name}</span>${badge}</div><div class="a-body">${md2h(report)}</div>${smr}</div><details class="raw-news"><summary>📋 查看原始新聞資料</summary><pre>${news}</pre></details>`;
+  }catch(e){nr.innerHTML=`<div class="empty-msg">❌ 分析失敗：${e.message}</div>`;}
+}
 
-/* SIDEBAR MOBILE */
+function qAI(t){
+  $('news-inp').value=t;
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.toggle('on',b.dataset.tab==='news'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='pane-news'));
+  closeSB(); runNews(t);
+}
+
+/* ── SIDEBAR MOBILE ── */
 function openSB(){$('sb').classList.add('on');$('ov').classList.add('on');}
 function closeSB(){$('sb').classList.remove('on');$('ov').classList.remove('on');}
 
-/* INIT */
+/* ── INIT ── */
 function init(){
-  loadKeys();bindKeys();
-  document.querySelectorAll('.eb').forEach(b=>b.addEventListener('click',()=>{const inp=$(b.dataset.t);inp.type=inp.type==='password'?'text':'password';b.textContent=inp.type==='password'?'👁':'🔒';}));
-  const gs=$('gs');gs.innerHTML=Object.keys(PRESETS).map(k=>`<option value="${k}">${k}</option>`).join('');gs.addEventListener('change',()=>{const p=PRESETS[gs.value];$('tks').value=p.c;$('pes').value=p.p;$('ped').textContent=p.p;});
-  const fp=PRESETS[Object.keys(PRESETS)[0]];$('tks').value=fp.c;$('ped').textContent=fp.p;$('pes').value=fp.p;
-  $('pes').addEventListener('input',e=>$('ped').textContent=e.target.value);
-  $('run').addEventListener('click',()=>{runAnalysis();if(mob())closeSB();});
-  document.querySelectorAll('.tb').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tb').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.tp').forEach(x=>x.classList.remove('on'));b.classList.add('on');$('t-'+b.dataset.tab).classList.add('on');}));
-  document.querySelectorAll('.stb-b').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.stb-b').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.sp').forEach(x=>x.classList.remove('on'));b.classList.add('on');$('s-'+b.dataset.sub).classList.add('on');}));
-  $('cdraw').addEventListener('click',()=>{const t=($('cman').value||$('csel').value).trim().toUpperCase();if(t)drawChart(t);});
-  $('csel').addEventListener('change',()=>{const t=$('csel').value;if(t){$('cman').value='';drawChart(t);}});
-  $('nb').addEventListener('click',()=>{const t=$('ni2').value.trim().toUpperCase();if(t)runNews(t);});
-  $('ni2').addEventListener('keydown',e=>{if(e.key==='Enter'){const t=$('ni2').value.trim().toUpperCase();if(t)runNews(t);}});
-  $('hbg').addEventListener('click',openSB);$('sb-x').addEventListener('click',closeSB);$('ov').addEventListener('click',closeSB);
+  loadKeys(); bindKeyPersist();
+
+  // Eye toggle
+  document.querySelectorAll('.eye').forEach(b=>b.addEventListener('click',()=>{
+    const inp=$(b.dataset.for);
+    inp.type=inp.type==='password'?'text':'password';
+    b.textContent=inp.type==='password'?'👁':'🔒';
+  }));
+
+  // Preset groups
+  const gs=$('grp-sel');
+  gs.innerHTML=Object.keys(PRESETS).map(k=>`<option value="${k}">${k}</option>`).join('');
+  gs.addEventListener('change',()=>{const p=PRESETS[gs.value];$('tks-inp').value=p.c;$('pe-range').value=p.p;$('pe-val').textContent=p.p;});
+  const fp=PRESETS[Object.keys(PRESETS)[0]];
+  $('tks-inp').value=fp.c; $('pe-val').textContent=fp.p; $('pe-range').value=fp.p;
+
+  // PE slider
+  $('pe-range').addEventListener('input',e=>$('pe-val').textContent=e.target.value);
+
+  // Run
+  $('run-btn').addEventListener('click',()=>{runAnalysis();if(isMob())closeSB();});
+
+  // Nav tabs
+  document.querySelectorAll('.nav-tab').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.pane').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); $('pane-'+b.dataset.tab).classList.add('on');
+  }));
+
+  // Sub tabs
+  document.querySelectorAll('.stab').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.stab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.subpane').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); $('sub-'+b.dataset.sub).classList.add('on');
+  }));
+
+  // Chart
+  $('chart-btn').addEventListener('click',()=>{
+    const t=($('chart-inp').value||$('chart-sel').value).trim().toUpperCase();
+    if(t)drawChart(t);
+  });
+  $('chart-sel').addEventListener('change',()=>{const t=$('chart-sel').value;if(t){$('chart-inp').value='';drawChart(t);}});
+
+  // News
+  $('news-btn').addEventListener('click',()=>{const t=$('news-inp').value.trim().toUpperCase();if(t)runNews(t);});
+  $('news-inp').addEventListener('keydown',e=>{if(e.key==='Enter'){const t=$('news-inp').value.trim().toUpperCase();if(t)runNews(t);}});
+
+  // Hamburger
+  $('hbg-btn').addEventListener('click',openSB);
+  $('sb-x-btn').addEventListener('click',closeSB);
+  $('ov').addEventListener('click',closeSB);
 }
+
 init();
 </script>
 </body>
