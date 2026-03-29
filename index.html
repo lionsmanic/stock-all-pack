@@ -554,6 +554,27 @@ function gemCheck(d,i,f){
 }
 
 /* ─ MAIN ANALYSIS ─ */
+async function analyseOne(t,tpe){
+  // Returns a result object or null
+  try{
+    const raw=await fetchHist(t);
+    if(!raw||raw.c.length<250)return null;
+    const d=buildInd(raw);ST.cache[t]=d;
+    // Fetch fund in parallel but don't block if it fails
+    let f={};
+    try{f=await fetchFund(t)||{};}catch{}
+    const isUS=!t.includes('.TW')&&!t.includes('.TWO');
+    const n=d.c.length,i=n-1;
+    const r0=score(d,i,f,tpe,isUS),r1=score(d,i-1,f,tpe,isUS),r2=score(d,i-2,f,tpe,isUS);
+    const roi=(d.c[i]-d.c[i-2])/d.c[i-2];
+    let val='➖';
+    if(r2.sig.includes('買進')||r2.sig.includes('偏多'))val=roi>0?`✅+${(roi*100).toFixed(0)}%`:`❌${(roi*100).toFixed(0)}%`;
+    else if(r2.sig.includes('賣出')||r2.sig.includes('偏空'))val=roi<0?`✅${(roi*100).toFixed(0)}%`:`❌+${(roi*100).toFixed(0)}%`;
+    const g=gemCheck(d,i,f);
+    return{ticker:t,name:getName(t),price:d.c[i],chg:(d.c[i]-d.c[i-1])/d.c[i-1],sig0:r0.sig,sig1:r1.sig,sig2:r2.sig,why:r0.why,val,fair:(f.eps&&f.eps>0)?(f.eps*tpe).toFixed(2):'—',score:r0.sc,isGem:g.isGem,gemR:g.r,fund:f};
+  }catch(e){console.warn('Skip',t,e.message);return null;}
+}
+
 async function runAnalysis(){
   if(ST.busy)return;ST.busy=true;closeDetail();
   const tks=$('tks-inp').value.split(',').map(t=>t.trim().toUpperCase()).filter(Boolean);
@@ -561,27 +582,18 @@ async function runAnalysis(){
   const btn=$('run-btn');btn.disabled=true;btn.textContent='⏳ 分析中...';
   $('prog-wrap').style.display='flex';
   ST.res=[];ST.cache={};const res=[];
-  for(let idx=0;idx<tks.length;idx++){
-    const t=tks[idx];
-    $('prog-fill').style.width=Math.round((idx+.5)/tks.length*100)+'%';
-    $('prog-lbl').textContent=`${t} (${idx+1}/${tks.length})`;
-    try{
-      const[hR,fR]=await Promise.allSettled([fetchHist(t),fetchFund(t)]);
-      if(hR.status!=='fulfilled')continue;
-      const raw=hR.value;if(raw.c.length<250)continue;
-      const d=buildInd(raw);ST.cache[t]=d;
-      const f=(fR.status==='fulfilled'?fR.value:{})||{};
-      const isUS=!t.includes('.TW')&&!t.includes('.TWO');
-      const n=d.c.length,i=n-1;
-      const r0=score(d,i,f,tpe,isUS),r1=score(d,i-1,f,tpe,isUS),r2=score(d,i-2,f,tpe,isUS);
-      const roi=(d.c[i]-d.c[i-2])/d.c[i-2];
-      let val='➖';
-      if(r2.sig.includes('買進')||r2.sig.includes('偏多'))val=roi>0?`✅+${(roi*100).toFixed(0)}%`:`❌${(roi*100).toFixed(0)}%`;
-      else if(r2.sig.includes('賣出')||r2.sig.includes('偏空'))val=roi<0?`✅${(roi*100).toFixed(0)}%`:`❌+${(roi*100).toFixed(0)}%`;
-      const g=gemCheck(d,i,f);
-      res.push({ticker:t,name:getName(t),price:d.c[i],chg:(d.c[i]-d.c[i-1])/d.c[i-1],sig0:r0.sig,sig1:r1.sig,sig2:r2.sig,why:r0.why,val,fair:(f.eps&&f.eps>0)?(f.eps*tpe).toFixed(2):'—',score:r0.sc,isGem:g.isGem,gemR:g.r,fund:f});
-    }catch(e){console.warn('Skip',t,e.message);}
-    if(idx<tks.length-1)await sleep(120);
+  // Process in batches of 3 for speed
+  const BATCH=3;
+  let done=0;
+  for(let i=0;i<tks.length;i+=BATCH){
+    const batch=tks.slice(i,i+BATCH);
+    $('prog-lbl').textContent=`分析 ${i+1}–${Math.min(i+BATCH,tks.length)} / ${tks.length}`;
+    const batchRes=await Promise.all(batch.map(t=>analyseOne(t,tpe)));
+    batchRes.forEach(r=>{if(r)res.push(r);});
+    done+=batch.length;
+    $('prog-fill').style.width=Math.round(done/tks.length*100)+'%';
+    // Small pause between batches to avoid rate limiting
+    if(i+BATCH<tks.length)await sleep(200);
   }
   ST.res=res;$('prog-wrap').style.display='none';
   renderAll(res);fillChartSel(res);
@@ -616,28 +628,9 @@ function renderAll(res){
 window.addEventListener('resize',()=>{if(ST.res.length)renderAll(ST.res);});
 
 /* ─ STOCK DETAIL PANEL ─ */
-async function openDetail(ticker){
-  const row=ST.res.find(r=>r.ticker===ticker);
-  if(!row)return;
-  ST.curTicker=ticker;
-
-  // Show panel, hide table
-  document.querySelectorAll('.spane').forEach(p=>p.style.display='none');
-  const dp=$('detail-panel');dp.style.display='block';
-  dp.scrollIntoView({behavior:'smooth',block:'start'});
-
-  // Header
-  $('dp-ticker').textContent=ticker;
-  $('dp-name').textContent=row.name;
-  $('dp-price').textContent=row.price.toFixed(2);
-  const chgEl=$('dp-chg');chgEl.textContent=(row.chg>=0?'+':'')+(row.chg*100).toFixed(2)+'%';
-  chgEl.className='dp-chg '+(row.chg>=0?'up':'dn');
-  $('dp-sig').textContent=row.sig0;
-
-  // Metrics strip
-  const f=row.fund||{};
+let _detailOpening=false;
+function renderMetrics(f,row){
   const fmtPct=v=>v!=null?`${(v*100).toFixed(1)}%`:'—';
-  const fmtNum=v=>v!=null?v.toFixed(2):'—';
   $('dp-metrics').innerHTML=[
     ['PE 本益比',f.pe!=null?f.pe.toFixed(1)+'x':'—'],
     ['PB 股價淨值',f.pb!=null?f.pb.toFixed(2)+'x':'—'],
@@ -648,9 +641,6 @@ async function openDetail(ticker){
     ['合理估值',`$${row.fair}`],
     ['評分',`${row.score.toFixed(1)} 分`],
   ].map(([l,v])=>`<div class="dp-m"><span class="dp-mv">${v}</span><span class="dp-ml">${l}</span></div>`).join('');
-
-  // Fund table
-  const revCls=f.rev>0?'fv-up':f.rev<0?'fv-dn':'fv-neu';
   $('dp-fund-table').innerHTML=[
     ['今日訊號',`<span class="${sCls(row.sig0)}">${row.sig0}</span>`],
     ['昨日訊號',`<span class="${sCls(row.sig1)}">${row.sig1}</span>`],
@@ -659,20 +649,61 @@ async function openDetail(ticker){
     ['策略理由',row.why||'—'],
     ['負債/淨值',f.debtEq!=null?`<span class="${f.debtEq>2?'fv-dn':'fv-up'}">${f.debtEq.toFixed(1)}%</span>`:'—'],
   ].map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+}
 
-  // K-line chart
-  $('dp-kchart').innerHTML='<div class="ld"><div class="spin"></div>載入 K 線圖...</div>';
-  renderDpKChart(ticker);
+async function openDetail(ticker){
+  if(_detailOpening)return;            // prevent double-fire
+  if(ST.curTicker===ticker&&$('detail-panel').style.display==='block')return;
+  _detailOpening=true;
+  try{
+    const row=ST.res.find(r=>r.ticker===ticker);
+    if(!row){_detailOpening=false;return;}
+    ST.curTicker=ticker;
 
-  // EPS quarterly chart
-  $('dp-eps-chart').innerHTML='<div class="ld"><div class="spin"></div>載入 EPS 數據...</div>';
-  renderEpsChart(ticker,f.quarterly||[]);
+    // Show panel, hide table
+    document.querySelectorAll('.spane').forEach(p=>p.style.display='none');
+    const dp=$('detail-panel');dp.style.display='block';
+    dp.scrollIntoView({behavior:'smooth',block:'start'});
 
-  // Reset AI
-  $('dp-ai-result').innerHTML='';
-  const aiBtn=$('dp-ai-btn');
-  aiBtn.disabled=false;aiBtn.textContent='🧠 AI 新聞深度分析';
-  aiBtn.onclick=()=>runDpAI(ticker);
+    // Header
+    $('dp-ticker').textContent=ticker;
+    $('dp-name').textContent=row.name;
+    $('dp-price').textContent=row.price.toFixed(2);
+    const chgEl=$('dp-chg');chgEl.textContent=(row.chg>=0?'+':'')+(row.chg*100).toFixed(2)+'%';
+    chgEl.className='dp-chg '+(row.chg>=0?'up':'dn');
+    $('dp-sig').textContent=row.sig0;
+
+    // Show cached fund first (may be empty), then refresh
+    renderMetrics(row.fund||{},row);
+
+    // K-line chart (use cache — fast)
+    renderDpKChart(ticker);
+
+    // EPS from cached fund
+    renderEpsChart(ticker,(row.fund||{}).quarterly||[]);
+
+    // Reset AI
+    $('dp-ai-result').innerHTML='';
+    const aiBtn=$('dp-ai-btn');
+    aiBtn.disabled=false;aiBtn.textContent='🧠 AI 新聞深度分析';
+    aiBtn.onclick=()=>runDpAI(ticker);
+
+    // Fetch fresh fund data in background and update UI when ready
+    fetchFund(ticker).then(f=>{
+      if(!f||ST.curTicker!==ticker)return;
+      // Merge with existing
+      const merged={...(row.fund||{}),...f};
+      row.fund=merged;  // update cache
+      // Update fair price if we now have EPS
+      if(merged.eps&&merged.eps>0){
+        const tpe=+$('pe-range').value;
+        row.fair=(merged.eps*tpe).toFixed(2);
+      }
+      renderMetrics(merged,row);
+      renderEpsChart(ticker,merged.quarterly||[]);
+    }).catch(()=>{});
+
+  }finally{_detailOpening=false;}
 }
 
 function closeDetail(){
@@ -686,7 +717,10 @@ function closeDetail(){
 async function renderDpKChart(ticker){
   try{
     let d=ST.cache[ticker.toUpperCase()];
-    if(!d){const raw=await fetchHist(ticker);d=buildInd(raw);}
+    if(!d){
+      $('dp-kchart').innerHTML='<div class="ld"><div class="spin"></div>載入 K 線圖...</div>';
+      const raw=await fetchHist(ticker);d=buildInd(raw);
+    }
     const n=d.c.length,disp=Math.min(n,500),st=n-disp;
     const toD=ts=>new Date(ts*1000).toISOString().split('T')[0];
     const dates=d.ts.slice(st).map(toD);
