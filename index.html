@@ -8,708 +8,321 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════
-   TOKENS — WARM LIGHT THEME
-   Inspired by CMoney / Yahoo Finance TW
-═══════════════════════════ */
 :root{
-  --bg:       #f5f2ee;
-  --bg2:      #ffffff;
-  --bg3:      #faf8f5;
-  --bg4:      #f0ece6;
-  --border:   #e2dbd2;
-  --border2:  #cfc7bb;
-
-  --brand:    #d4821a;   /* main amber-orange */
-  --brand2:   #b86a10;
-  --brand3:   #f5a535;
-  --brand-bg: #fff4e6;
-  --brand-bdr:#f5c580;
-
-  --tx1:  #1a1410;
-  --tx2:  #4a3e34;
-  --tx3:  #8a7868;
-  --tx4:  #b8a898;
-
-  --green:  #16a34a;
-  --green2: #dcfce7;
-  --red:    #dc2626;
-  --red2:   #fee2e2;
-  --blue:   #0d6efd;
-  --teal:   #0d9488;
-  --gold:   #c07820;
-
-  --r:   8px;
-  --r2:  5px;
-  --shadow-sm: 0 1px 4px rgba(0,0,0,.07);
-  --shadow:    0 2px 12px rgba(0,0,0,.1);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,.15);
-
-  --ff: 'Noto Sans TC', sans-serif;
-  --fm: 'JetBrains Mono', monospace;
+  --bg:#f4f1ec;--bg2:#fff;--bg3:#faf8f4;--bg4:#f0ece5;
+  --bdr:#e4ddd3;--bdr2:#cfc7b8;
+  --brand:#c97d18;--brand2:#a86210;--brand3:#f0a030;
+  --bbg:#fff8ee;--bbdr:#f0c070;
+  --tx1:#18120a;--tx2:#4a3c2c;--tx3:#8a7860;--tx4:#b8a888;
+  --green:#16a34a;--gbg:#f0fdf4;--gbdr:#bbf7d0;
+  --red:#dc2626;--rbg:#fef2f2;--rbdr:#fecaca;
+  --blue:#1d6fb8;--teal:#0d9488;
+  --r:8px;--r2:5px;
+  --sh:0 1px 4px rgba(0,0,0,.08);--sh2:0 3px 14px rgba(0,0,0,.12);--sh3:0 8px 32px rgba(0,0,0,.16);
+  --ff:'Noto Sans TC',sans-serif;--fm:'JetBrains Mono',monospace;
 }
-
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%;font-size:15px}
-body{
-  font-family:var(--ff);
-  background:var(--bg);
-  color:var(--tx1);
-  line-height:1.6;
-  min-height:100dvh;
-  display:flex;
-  flex-direction:column;
-}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--ff);background:var(--bg);color:var(--tx1);font-size:15px;line-height:1.6;min-height:100dvh;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--bg3)}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:#f0ece6}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:#a89880}
+/* ═══ HEADER ═══ */
+#hdr{background:var(--bg2);border-bottom:2px solid var(--brand);position:sticky;top:0;z-index:100;box-shadow:var(--sh)}
+.hdr-in{max-width:1440px;margin:0 auto;padding:0 20px;display:flex;align-items:stretch;height:52px;gap:0}
+.logo{display:flex;align-items:center;gap:8px;padding-right:24px;border-right:1px solid var(--bdr);margin-right:4px;text-decoration:none;flex-shrink:0}
+.logo-i{font-size:20px}
+.logo-t{font-size:17px;font-weight:700;color:var(--tx1);white-space:nowrap}
+.logo-t em{color:var(--brand);font-style:normal}
+.hnav{display:flex;align-items:stretch;overflow-x:auto}
+.hnav::-webkit-scrollbar{display:none}
+.hn{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:600;color:var(--tx3);background:none;border:none;padding:0 18px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s}
+.hn:hover{color:var(--brand)}
+.hn.on{color:var(--brand);border-bottom-color:var(--brand)}
+.hdr-r{display:flex;align-items:center;gap:8px;margin-left:auto;padding-left:14px;flex-shrink:0}
+.nav-st{font-family:var(--fm);font-size:11px;color:var(--tx4)}
+.btn-cfg{display:flex;align-items:center;gap:5px;font-family:var(--ff);font-size:13px;font-weight:600;color:var(--tx2);background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r2);padding:6px 11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-cfg:hover,.btn-cfg.on{border-color:var(--brand);color:var(--brand);background:var(--bbg)}
+.hbg{display:none;background:none;border:none;font-size:20px;color:var(--tx2);cursor:pointer;padding:4px 8px;margin-right:2px}
 
-/* ═══════════════════════════
-   TOP HEADER — like CMoney
-═══════════════════════════ */
-#header{
-  background:#fff;
-  border-bottom:2px solid var(--brand);
-  position:sticky;top:0;z-index:100;
-  box-shadow:var(--shadow-sm);
-}
-.hdr-inner{
-  max-width:1400px;margin:0 auto;
-  padding:0 20px;
-  display:flex;align-items:stretch;
-  height:54px;gap:0;
-}
-.hdr-logo{
-  display:flex;align-items:center;gap:10px;
-  padding-right:28px;
-  border-right:1px solid var(--border);
-  margin-right:4px;
-  text-decoration:none;
-}
-.hdr-logo-icon{font-size:22px;line-height:1}
-.hdr-logo-text{
-  font-size:17px;font-weight:700;
-  color:var(--tx1);letter-spacing:0.01em;
-  white-space:nowrap;
-}
-.hdr-logo-text span{color:var(--brand)}
+/* ═══ SETTINGS DROPDOWN ═══ */
+#cfg-panel{display:none;position:fixed;top:54px;right:0;width:100%;max-width:500px;background:var(--bg2);border:1px solid var(--bdr);border-top:none;border-radius:0 0 var(--r) var(--r);box-shadow:var(--sh3);z-index:200;padding:20px 22px 22px}
+#cfg-panel.on{display:block}
+.cfg-ttl{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:14px}
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cfg-fg{display:flex;flex-direction:column;gap:5px}
+.cfg-lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3)}
+.key-ok{font-size:10px;font-weight:600;color:var(--green);background:var(--gbg);border:1px solid var(--gbdr);border-radius:3px;padding:1px 6px;margin-left:5px}
+.iw{position:relative}
+.iw input{width:100%;background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r2);color:var(--tx1);font-family:var(--ff);font-size:14px;padding:9px 36px 9px 12px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+.iw input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(201,125,24,.12)}
+.iw .eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--tx4);font-size:14px;padding:2px;transition:color .15s}
+.iw .eye:hover{color:var(--brand)}
+.cfg-lnk{font-size:12px;color:var(--tx3);margin-top:3px}
+.cfg-lnk a{color:var(--brand);text-decoration:none}
+.cfg-lnk a:hover{text-decoration:underline}
+.cfg-note{margin-top:14px;font-size:12px;color:var(--tx3);background:var(--bbg);border:1px solid var(--bbdr);border-radius:var(--r2);padding:9px 12px;line-height:1.65}
 
-/* Main nav tabs */
-.hdr-nav{display:flex;align-items:stretch;flex:1;overflow-x:auto}
-.hdr-nav::-webkit-scrollbar{display:none}
-.hn-tab{
-  display:flex;align-items:center;gap:6px;
-  font-size:14px;font-weight:600;
-  color:var(--tx2);
-  background:none;border:none;
-  padding:0 20px;
-  border-bottom:3px solid transparent;
-  cursor:pointer;white-space:nowrap;
-  transition:color .15s,border-color .15s;
-}
-.hn-tab:hover{color:var(--brand)}
-.hn-tab.on{color:var(--brand);border-bottom-color:var(--brand)}
-
-/* Settings btn */
-.hdr-actions{display:flex;align-items:center;gap:8px;margin-left:auto;padding-left:16px}
-.btn-settings{
-  display:flex;align-items:center;gap:6px;
-  font-family:var(--ff);font-size:13px;font-weight:600;
-  color:var(--tx2);
-  background:var(--bg3);
-  border:1px solid var(--border);
-  border-radius:var(--r2);
-  padding:6px 12px;cursor:pointer;
-  transition:all .15s;white-space:nowrap;
-}
-.btn-settings:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-bg)}
-.btn-settings.on{background:var(--brand-bg);border-color:var(--brand-bdr);color:var(--brand)}
-
-/* Mobile hamburger */
-.hbg{
-  display:none;
-  background:none;border:none;
-  font-size:20px;color:var(--tx2);
-  cursor:pointer;padding:4px 8px;
-  margin-right:4px;
-}
-
-/* ═══════════════════════════
-   SETTINGS PANEL (dropdown)
-═══════════════════════════ */
-#settings-panel{
-  display:none;
-  position:fixed;top:56px;right:0;
-  width:100%;max-width:480px;
-  background:#fff;
-  border:1px solid var(--border);
-  border-top:none;
-  border-radius:0 0 var(--r) var(--r);
-  box-shadow:var(--shadow-lg);
-  z-index:200;
-  padding:20px 22px 22px;
-}
-#settings-panel.on{display:block}
-.sp-title{
-  font-size:13px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;
-  color:var(--tx3);margin-bottom:14px;
-}
-.sp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:600px){.sp-grid{grid-template-columns:1fr}}
-.sp-fg{display:flex;flex-direction:column;gap:5px}
-.sp-lbl{
-  font-size:11px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;
-  color:var(--tx3);
-}
-.key-ok{
-  font-size:10px;font-weight:600;color:var(--green);
-  background:var(--green2);
-  border-radius:3px;padding:1px 6px;margin-left:6px;
-}
-.inp-r{position:relative}
-.inp-r input{padding-right:36px}
-.inp-r .eye{
-  position:absolute;right:10px;top:50%;transform:translateY(-50%);
-  background:none;border:none;cursor:pointer;
-  color:var(--tx4);font-size:14px;padding:2px;
-  transition:color .15s;
-}
-.inp-r .eye:hover{color:var(--brand)}
-.sp-note{
-  margin-top:14px;font-size:12px;color:var(--tx3);
-  background:var(--brand-bg);
-  border:1px solid var(--brand-bdr);
-  border-radius:var(--r2);padding:9px 12px;
-  line-height:1.65;
-}
-.sp-note a{color:var(--brand);text-decoration:none}
-.sp-note a:hover{text-decoration:underline}
-
-/* ═══════════════════════════
-   FILTER BAR — like Goodinfo
-═══════════════════════════ */
-#filterbar{
-  background:#fff;
-  border-bottom:1px solid var(--border);
-  padding:10px 20px;
-  position:sticky;top:56px;z-index:90;
-  box-shadow:0 1px 4px rgba(0,0,0,.04);
-}
-.fb-inner{
-  max-width:1400px;margin:0 auto;
-  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
-}
-.fb-label{
-  font-size:12px;font-weight:600;
-  color:var(--tx3);letter-spacing:.05em;
-  white-space:nowrap;
-}
-.fb-inner select,
-.fb-inner input[type=text]{
-  background:var(--bg3);
-  border:1px solid var(--border);
-  border-radius:var(--r2);
-  color:var(--tx1);
-  font-family:var(--ff);font-size:14px;
-  padding:7px 11px;
-  outline:none;
-  -webkit-appearance:none;appearance:none;
-  transition:border-color .15s,box-shadow .15s;
-}
-.fb-inner select{
-  min-width:180px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a7868' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 10px center;
-  padding-right:28px;cursor:pointer;
-}
-.fb-inner input[type=text]{flex:1;min-width:200px;max-width:400px}
-.fb-inner input:focus,
-.fb-inner select:focus{
-  border-color:var(--brand);
-  box-shadow:0 0 0 3px rgba(212,130,26,.12);
-}
-
-/* PE row */
-.pe-wrap{display:flex;align-items:center;gap:8px;white-space:nowrap}
-.pe-wrap input[type=range]{
-  width:90px;height:4px;
-  -webkit-appearance:none;appearance:none;
-  background:var(--border);border-radius:2px;cursor:pointer;padding:0;
-}
-.pe-wrap input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:16px;height:16px;
-  background:var(--brand);border:2px solid #fff;
-  border-radius:50%;cursor:pointer;
-  box-shadow:0 0 4px rgba(212,130,26,.4);
-  transition:transform .15s;
-}
-.pe-wrap input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
-.pe-num{
-  font-family:var(--fm);font-size:14px;font-weight:600;
-  color:var(--brand);
-  background:var(--brand-bg);border:1px solid var(--brand-bdr);
-  border-radius:4px;padding:1px 8px;min-width:44px;text-align:center;
-}
-
-.btn-run{
-  background:var(--brand);color:#fff;
-  border:none;border-radius:var(--r);
-  font-family:var(--ff);font-size:14px;font-weight:700;
-  padding:8px 22px;cursor:pointer;
-  transition:all .18s;white-space:nowrap;
-  box-shadow:0 2px 8px rgba(212,130,26,.35);
-  letter-spacing:.04em;
-}
-.btn-run:hover:not(:disabled){
-  background:var(--brand2);
-  box-shadow:0 4px 16px rgba(212,130,26,.45);
-  transform:translateY(-1px);
-}
+/* ═══ FILTER BAR ═══ */
+#fbar{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:10px 20px;position:sticky;top:54px;z-index:90;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.fbar-in{max-width:1440px;margin:0 auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.fb-lbl{font-size:12px;font-weight:600;color:var(--tx3);white-space:nowrap}
+.fbar-in select,.fbar-in input[type=text]{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r2);color:var(--tx1);font-family:var(--ff);font-size:14px;padding:7px 11px;outline:none;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
+.fbar-in select{min-width:190px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a7860' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer}
+.fbar-in input[type=text]{flex:1;min-width:200px}
+.fbar-in select:focus,.fbar-in input[type=text]:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(201,125,24,.12)}
+.pe-row{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.pe-row input[type=range]{width:88px;height:4px;-webkit-appearance:none;background:var(--bdr);border-radius:2px;cursor:pointer;padding:0}
+.pe-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--brand);border:2px solid #fff;border-radius:50%;cursor:pointer;box-shadow:0 0 4px rgba(201,125,24,.4);transition:transform .15s}
+.pe-row input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.pe-n{font-family:var(--fm);font-size:14px;font-weight:600;color:var(--brand);background:var(--bbg);border:1px solid var(--bbdr);border-radius:4px;padding:1px 8px;min-width:44px;text-align:center}
+.btn-run{background:var(--brand);color:#fff;border:none;border-radius:var(--r);font-family:var(--ff);font-size:14px;font-weight:700;padding:8px 22px;cursor:pointer;transition:all .18s;white-space:nowrap;box-shadow:0 2px 8px rgba(201,125,24,.35);letter-spacing:.04em}
+.btn-run:hover:not(:disabled){background:var(--brand2);box-shadow:0 4px 16px rgba(201,125,24,.45);transform:translateY(-1px)}
 .btn-run:disabled{opacity:.5;cursor:not-allowed;transform:none}
-
-/* Progress */
-#prog-wrap{
-  display:none;
-  background:var(--brand-bg);border:1px solid var(--brand-bdr);
-  border-radius:var(--r2);padding:8px 14px;
-  flex:1;min-width:200px;
-}
+#prog-wrap{display:none;background:var(--bbg);border:1px solid var(--bbdr);border-radius:var(--r2);padding:8px 14px;flex:1;min-width:180px}
 .prog-row{display:flex;align-items:center;gap:10px}
-.prog-txt{font-size:12px;color:var(--tx2);white-space:nowrap;font-family:var(--fm)}
-.prog-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
-.prog-fill{
-  height:100%;width:0%;
-  background:linear-gradient(90deg,var(--brand),var(--brand3));
-  border-radius:2px;transition:width .3s ease;
-}
+.prog-txt{font-size:12px;color:var(--tx2);font-family:var(--fm);white-space:nowrap}
+.prog-track{flex:1;height:4px;background:var(--bdr);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--brand),var(--brand3));border-radius:2px;transition:width .3s ease}
 
-/* ═══════════════════════════
-   MAIN CONTENT
-═══════════════════════════ */
-#app-body{
-  flex:1;
-  max-width:1400px;width:100%;
-  margin:0 auto;
-  padding:16px 20px 32px;
-}
+/* ═══ APP BODY ═══ */
+#app{flex:1;max-width:1440px;width:100%;margin:0 auto;padding:16px 20px 32px}
+.pane{display:none}.pane.on{display:block}
 
-/* ── TAB PANES ── */
-.pane{display:none}
-.pane.on{display:block}
-
-/* ── STATUS BAR ── */
-.status-bar{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:14px;flex-wrap:wrap;gap:8px;
-}
-.status-txt{font-size:13px;color:var(--tx3)}
-.status-time{font-family:var(--fm);font-size:12px;color:var(--tx4)}
-
-/* ─── SUB TABS ─── */
-.stabs{
-  display:flex;gap:0;margin-bottom:0;
-  border-bottom:2px solid var(--border);
-  overflow-x:auto;-webkit-overflow-scrolling:touch;
-}
+/* ═══ SCREENER ═══ */
+.stabs{display:flex;border-bottom:2px solid var(--bdr);margin-bottom:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .stabs::-webkit-scrollbar{display:none}
-.st{
-  font-size:14px;font-weight:600;color:var(--tx3);
-  background:none;border:none;
-  padding:11px 20px;
-  cursor:pointer;white-space:nowrap;
-  border-bottom:2px solid transparent;margin-bottom:-2px;
-  transition:all .15s;
-  display:flex;align-items:center;gap:6px;
-}
+.st{font-size:14px;font-weight:600;color:var(--tx3);background:none;border:none;padding:11px 18px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;display:flex;align-items:center;gap:5px}
 .st:hover{color:var(--tx2);background:var(--bg4)}
-.st.on{color:var(--brand);border-bottom-color:var(--brand);background:#fff}
-.st-badge{
-  font-family:var(--fm);font-size:11px;
-  background:var(--bg4);border:1px solid var(--border);
-  border-radius:10px;padding:1px 7px;color:var(--tx3);
-  transition:all .15s;
-}
-.st.on .st-badge{background:var(--brand-bg);border-color:var(--brand-bdr);color:var(--brand)}
+.st.on{color:var(--brand);border-bottom-color:var(--brand);background:var(--bg2)}
+.stb{font-family:var(--fm);font-size:11px;background:var(--bg4);border:1px solid var(--bdr);border-radius:10px;padding:1px 7px;color:var(--tx3);transition:all .15s}
+.st.on .stb{background:var(--bbg);border-color:var(--bbdr);color:var(--brand)}
+.spane{display:none;background:var(--bg2);border:1px solid var(--bdr);border-top:none;border-radius:0 0 var(--r) var(--r);box-shadow:var(--sh)}
+.spane.on{display:block}
 
-.sub-pane{
-  display:none;
-  background:#fff;
-  border:1px solid var(--border);
-  border-top:none;
-  border-radius:0 0 var(--r) var(--r);
-  box-shadow:var(--shadow-sm);
-}
-.sub-pane.on{display:block}
-
-/* ─── TABLE ─── */
-.tbl-outer{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table.dt{
-  width:100%;border-collapse:collapse;
-  font-size:14px;min-width:860px;
-}
-table.dt thead tr{
-  background:var(--bg3);
-  border-bottom:2px solid var(--border);
-  position:sticky;top:110px;z-index:10;
-}
-table.dt th{
-  padding:10px 14px;text-align:left;
-  font-size:11px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;
-  color:var(--tx3);white-space:nowrap;
-  background:var(--bg3);
-}
-table.dt tbody tr{
-  border-bottom:1px solid var(--bg4);
-  transition:background .12s;
-}
+/* Table */
+.tbl-out{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.dt{width:100%;border-collapse:collapse;font-size:14px;min-width:840px}
+table.dt thead tr{background:var(--bg3);border-bottom:2px solid var(--bdr);position:sticky;top:108px;z-index:10}
+table.dt th{padding:10px 14px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);white-space:nowrap;background:var(--bg3)}
+table.dt tbody tr{border-bottom:1px solid var(--bg4);transition:background .12s;cursor:pointer}
 table.dt tbody tr:last-child{border-bottom:none}
-table.dt tbody tr:hover{background:var(--bg3)}
+table.dt tbody tr:hover{background:#fffbf4}
 table.dt td{padding:10px 14px;vertical-align:middle}
-
-.c-tk{font-family:var(--fm);font-size:13px;color:var(--teal);font-weight:600}
-.c-nm{font-size:15px;font-weight:600;color:var(--tx1)}
+.c-tk{font-family:var(--fm);font-size:12px;color:var(--teal);font-weight:600}
+.c-nm{font-size:15px;font-weight:600}
 .c-nu{font-family:var(--fm);font-size:14px;color:var(--tx2)}
 .c-up{font-family:var(--fm);font-size:14px;color:var(--green);font-weight:700}
 .c-dn{font-family:var(--fm);font-size:14px;color:var(--red);font-weight:700}
-.c-why{font-size:13px;color:var(--tx3);max-width:200px;white-space:normal;line-height:1.45}
-.c-gm{font-size:12px;color:var(--gold);font-weight:700;white-space:nowrap}
-.s-b{color:var(--green);font-weight:700;font-size:14px}
-.s-s{color:var(--red);font-weight:700;font-size:14px}
-.s-n{color:var(--tx3);font-size:14px}
+.c-wy{font-size:12px;color:var(--tx3);max-width:200px;white-space:normal;line-height:1.4}
+.c-gm{font-size:12px;color:var(--brand);font-weight:700;white-space:nowrap}
+.s-b{color:var(--green);font-weight:700}
+.s-s{color:var(--red);font-weight:700}
+.s-n{color:var(--tx3)}
 .s-v{font-size:12px;color:var(--blue)}
+.btn-detail{background:var(--bbg);color:var(--brand);border:1px solid var(--bbdr);border-radius:var(--r2);font-family:var(--ff);font-size:12px;font-weight:600;padding:5px 10px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-detail:hover{background:var(--brand);color:#fff}
 
-.btn-ai{
-  background:var(--brand-bg);color:var(--brand);
-  border:1px solid var(--brand-bdr);
-  border-radius:var(--r2);
-  font-family:var(--ff);font-size:12px;font-weight:600;
-  padding:5px 10px;cursor:pointer;
-  transition:all .15s;white-space:nowrap;
-}
-.btn-ai:hover{background:var(--brand);color:#fff;box-shadow:0 2px 8px rgba(212,130,26,.3)}
-
-/* ─── MOBILE CARDS ─── */
+/* Mobile cards */
 .card-list{display:none;flex-direction:column;gap:10px;padding:14px}
-
-.scard{
-  background:#fff;
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  padding:14px 16px;
-  box-shadow:var(--shadow-sm);
-  transition:box-shadow .15s,border-color .15s;
-}
-.scard:hover{box-shadow:var(--shadow);border-color:var(--border2)}
+.scard{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.scard:hover{box-shadow:var(--sh2);border-color:var(--bdr2)}
 .sc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
 .sc-l .tk{font-family:var(--fm);font-size:12px;color:var(--teal);font-weight:600}
-.sc-l .nm{font-size:17px;font-weight:700;margin-top:2px;color:var(--tx1)}
+.sc-l .nm{font-size:17px;font-weight:700;margin-top:2px}
 .sc-r{text-align:right}
-.sc-r .pr{font-family:var(--fm);font-size:19px;font-weight:700;color:var(--tx1)}
+.sc-r .pr{font-family:var(--fm);font-size:19px;font-weight:700}
 .sc-r .ch{font-family:var(--fm);font-size:13px;font-weight:600}
 .pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
 .pill{display:inline-flex;align-items:center;font-size:13px;font-weight:600;border-radius:4px;padding:3px 9px;white-space:nowrap}
-.pill-b{background:var(--green2);color:var(--green);border:1px solid #bbf7d0}
-.pill-s{background:var(--red2);color:var(--red);border:1px solid #fecaca}
-.pill-n{background:var(--bg4);color:var(--tx3);border:1px solid var(--border)}
-.pill-g{background:var(--brand-bg);color:var(--gold);border:1px solid var(--brand-bdr)}
+.pill-b{background:var(--gbg);color:var(--green);border:1px solid var(--gbdr)}
+.pill-s{background:var(--rbg);color:var(--red);border:1px solid var(--rbdr)}
+.pill-n{background:var(--bg4);color:var(--tx3);border:1px solid var(--bdr)}
+.pill-g{background:var(--bbg);color:var(--brand);border:1px solid var(--bbdr)}
 .sc-why{font-size:13px;color:var(--tx3);margin-bottom:10px;line-height:1.5}
 .sc-foot{display:flex;align-items:center;justify-content:space-between}
 .sc-meta{font-family:var(--fm);font-size:11px;color:var(--tx4)}
 
-/* ─── EMPTY ─── */
-.empty-state{
-  padding:56px 24px;text-align:center;
-  display:flex;flex-direction:column;align-items:center;gap:12px;
-}
-.es-icon{font-size:52px;opacity:.25}
-.es-title{font-size:16px;font-weight:600;color:var(--tx2)}
-.es-hint{font-size:14px;color:var(--tx3);max-width:300px;line-height:1.6;text-align:center}
+/* ═══ STOCK DETAIL PANEL ═══ */
+#detail-panel{display:none;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);box-shadow:var(--sh2);margin-top:16px;overflow:hidden;animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.dp-hdr{display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(to right,var(--bbg),var(--bg2));border-bottom:1px solid var(--bdr);flex-wrap:wrap}
+.dp-back{background:none;border:none;font-family:var(--ff);font-size:13px;font-weight:600;color:var(--tx3);cursor:pointer;padding:4px 8px 4px 0;display:flex;align-items:center;gap:4px;transition:color .15s}
+.dp-back:hover{color:var(--brand)}
+.dp-ticker{font-family:var(--fm);font-size:14px;font-weight:600;color:var(--teal);background:#f0fdfa;border:1px solid #99f6e4;border-radius:4px;padding:3px 10px}
+.dp-name{font-size:20px;font-weight:700}
+.dp-price{font-family:var(--fm);font-size:22px;font-weight:700}
+.dp-chg{font-family:var(--fm);font-size:14px;font-weight:700;padding:2px 8px;border-radius:4px}
+.dp-chg.up{background:var(--gbg);color:var(--green)}
+.dp-chg.dn{background:var(--rbg);color:var(--red)}
+.dp-sig{font-size:14px;font-weight:600;padding:4px 10px;border-radius:4px;background:var(--bg4);color:var(--tx2)}
 
-/* ═══════════════════════════
-   NEWS TAB
-═══════════════════════════ */
-#pane-news{max-width:900px}
-.news-bar{
-  background:#fff;border:1px solid var(--border);
-  border-radius:var(--r);padding:16px 18px;
-  box-shadow:var(--shadow-sm);
-  margin-bottom:18px;
-  display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;
-}
-.news-bar input{
-  flex:1;min-width:200px;max-width:360px;
-  background:var(--bg3);border:1px solid var(--border);
-  border-radius:var(--r2);color:var(--tx1);
-  font-family:var(--ff);font-size:14px;padding:9px 12px;
-  outline:none;transition:border-color .15s,box-shadow .15s;
-  -webkit-appearance:none;
-}
-.news-bar input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(212,130,26,.12)}
-.btn-primary{
-  background:var(--brand);color:#fff;border:none;
-  border-radius:var(--r);
-  font-family:var(--ff);font-size:14px;font-weight:700;
-  padding:9px 22px;cursor:pointer;
-  transition:all .18s;white-space:nowrap;
-  box-shadow:0 2px 8px rgba(212,130,26,.35);
-}
-.btn-primary:hover{background:var(--brand2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(212,130,26,.45)}
+/* Metrics strip */
+.dp-metrics{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--bdr);background:var(--bg3)}
+.dp-m{flex:1;min-width:90px;padding:12px 16px;text-align:center;border-right:1px solid var(--bdr)}
+.dp-m:last-child{border-right:none}
+.dp-mv{display:block;font-family:var(--fm);font-size:16px;font-weight:700;color:var(--tx1)}
+.dp-ml{display:block;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--tx3);margin-top:3px}
+
+/* Chart + fundamentals layout */
+.dp-body{display:grid;grid-template-columns:1fr 380px;gap:0;border-bottom:1px solid var(--bdr)}
+@media(max-width:900px){.dp-body{grid-template-columns:1fr}}
+.dp-chart-col{border-right:1px solid var(--bdr);padding:16px 18px}
+.dp-fund-col{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.dp-section-title{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--bdr)}
+#dp-kchart{width:100%;min-height:320px}
+#dp-eps-chart{width:100%;min-height:200px}
+
+/* Fund table */
+.fund-table{width:100%;border-collapse:collapse;font-size:13px}
+.fund-table tr{border-bottom:1px solid var(--bg4)}
+.fund-table tr:last-child{border-bottom:none}
+.fund-table td{padding:7px 6px;vertical-align:middle}
+.fund-table td:first-child{color:var(--tx3);font-weight:600;font-size:12px;letter-spacing:.04em;white-space:nowrap}
+.fund-table td:last-child{font-family:var(--fm);font-weight:600;text-align:right}
+.fv-up{color:var(--green)}.fv-dn{color:var(--red)}.fv-neu{color:var(--tx2)}
+
+/* AI analysis area */
+.dp-ai{padding:16px 18px}
+.btn-ai-news{display:flex;align-items:center;gap:8px;background:var(--brand);color:#fff;border:none;border-radius:var(--r);font-family:var(--ff);font-size:15px;font-weight:700;padding:10px 24px;cursor:pointer;transition:all .18s;box-shadow:0 2px 8px rgba(201,125,24,.35)}
+.btn-ai-news:hover{background:var(--brand2);box-shadow:0 4px 16px rgba(201,125,24,.45);transform:translateY(-1px)}
+.btn-ai-news:disabled{opacity:.6;cursor:not-allowed;transform:none}
+#dp-ai-result{margin-top:16px}
 
 /* Analysis card */
-.a-card{
-  background:#fff;border:1px solid var(--border);
-  border-radius:var(--r);box-shadow:var(--shadow-sm);overflow:hidden;
-}
-.a-hdr{
-  display:flex;align-items:center;gap:12px;
-  padding:14px 18px;
-  background:linear-gradient(to right,var(--brand-bg),#fff);
-  border-bottom:1px solid var(--border);
-  flex-wrap:wrap;
-}
-.a-chip{
-  font-family:var(--fm);font-size:14px;font-weight:600;
-  color:var(--teal);background:#f0fdfb;
-  border:1px solid #99f6e4;border-radius:4px;padding:3px 10px;
-}
-.a-name{font-size:18px;font-weight:700;color:var(--tx1)}
-.src-tag{
-  margin-left:auto;font-size:10px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;
-  padding:3px 8px;border-radius:3px;
-}
-.src-s{background:var(--green2);color:var(--green);border:1px solid #bbf7d0}
+.a-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.a-hdr{display:flex;align-items:center;gap:10px;padding:12px 18px;background:linear-gradient(to right,var(--bbg),var(--bg2));border-bottom:1px solid var(--bdr);flex-wrap:wrap}
+.src-tag{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px}
+.src-s{background:var(--gbg);color:var(--green);border:1px solid var(--gbdr)}
 .src-y{background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe}
-
-.a-body{
-  padding:22px 24px;
-  font-size:15px;line-height:1.85;color:var(--tx2);
-}
-.a-body h2{
-  font-size:19px;font-weight:700;color:var(--tx1);
-  margin:22px 0 10px;padding-bottom:8px;
-  border-bottom:2px solid var(--border);
-}
+.a-body{padding:18px 22px;font-size:14px;line-height:1.85;color:var(--tx2)}
+.a-body h2{font-size:18px;font-weight:700;color:var(--tx1);margin:20px 0 10px;padding-bottom:7px;border-bottom:2px solid var(--bdr)}
 .a-body h2:first-child{margin-top:0}
-.a-body h3{font-size:16px;font-weight:700;color:var(--brand);margin:16px 0 8px}
-.a-body p{margin:8px 0}
-.a-body ul{padding-left:22px;margin:8px 0}
-.a-body li{margin:6px 0}
+.a-body h3{font-size:15px;font-weight:700;color:var(--brand);margin:14px 0 7px}
+.a-body p{margin:7px 0}.a-body ul{padding-left:20px;margin:7px 0}.a-body li{margin:5px 0}
 .a-body strong{color:var(--tx1);font-weight:700}
-
-.score-strip{
-  display:flex;border-top:1px solid var(--border);
-  background:var(--bg3);flex-wrap:wrap;
-}
-.sm-cell{
-  flex:1;min-width:100px;
-  padding:14px 16px;text-align:center;
-  border-right:1px solid var(--border);
-}
-.sm-cell:last-child{border-right:none}
-.sm-v{display:block;font-family:var(--fm);font-size:18px;font-weight:700;color:var(--brand)}
-.sm-l{display:block;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--tx3);margin-top:3px}
-
-.raw-news{margin-top:14px}
-.raw-news summary{cursor:pointer;font-size:13px;color:var(--tx3);padding:6px 0;user-select:none;list-style:none}
+.raw-news{margin-top:12px}
+.raw-news summary{cursor:pointer;font-size:12px;color:var(--tx3);padding:6px 0;user-select:none;list-style:none}
 .raw-news summary::-webkit-details-marker{display:none}
-.raw-news pre{
-  font-family:var(--fm);font-size:11px;color:var(--tx3);
-  background:var(--bg3);padding:13px;border-radius:var(--r2);
-  overflow-x:auto;white-space:pre-wrap;
-  margin-top:7px;border:1px solid var(--border);line-height:1.65;
-}
+.raw-news pre{font-family:var(--fm);font-size:11px;color:var(--tx3);background:var(--bg3);padding:12px;border-radius:var(--r2);overflow-x:auto;white-space:pre-wrap;margin-top:6px;border:1px solid var(--bdr);line-height:1.65}
 
-/* ═══════════════════════════
-   CHART TAB
-═══════════════════════════ */
-.chart-ctrl{
-  background:#fff;border:1px solid var(--border);
-  border-radius:var(--r);padding:14px 18px;
-  box-shadow:var(--shadow-sm);margin-bottom:16px;
-  display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;
-}
-.chart-ctrl select,
-.chart-ctrl input[type=text]{
-  flex:1;min-width:180px;max-width:320px;
-  background:var(--bg3);border:1px solid var(--border);
-  border-radius:var(--r2);color:var(--tx1);
-  font-family:var(--ff);font-size:14px;padding:9px 12px;
-  outline:none;-webkit-appearance:none;
-  transition:border-color .15s,box-shadow .15s;
-}
-.chart-ctrl select{
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a7868' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 10px center;
-  padding-right:28px;cursor:pointer;
-}
-.chart-ctrl input:focus,.chart-ctrl select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(212,130,26,.12)}
-.btn-outline{
-  background:#fff;color:var(--tx2);border:1px solid var(--border2);
-  border-radius:var(--r);font-family:var(--ff);font-size:14px;font-weight:600;
-  padding:9px 20px;cursor:pointer;transition:all .15s;white-space:nowrap;
-}
-.btn-outline:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-bg)}
-#chart-box{
-  background:#fff;border:1px solid var(--border);
-  border-radius:var(--r);box-shadow:var(--shadow-sm);min-height:460px;
-}
+/* ═══ NEWS TAB ═══ */
+#pane-news{max-width:880px}
+.news-bar{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.news-bar input{flex:1;min-width:180px;max-width:340px;background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r2);color:var(--tx1);font-family:var(--ff);font-size:14px;padding:9px 12px;outline:none;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
+.news-bar input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(201,125,24,.12)}
+.btn-primary{background:var(--brand);color:#fff;border:none;border-radius:var(--r);font-family:var(--ff);font-size:14px;font-weight:700;padding:9px 22px;cursor:pointer;transition:all .18s;white-space:nowrap;box-shadow:0 2px 8px rgba(201,125,24,.35)}
+.btn-primary:hover{background:var(--brand2);transform:translateY(-1px)}
+.btn-outline{background:var(--bg2);color:var(--tx2);border:1px solid var(--bdr2);border-radius:var(--r);font-family:var(--ff);font-size:14px;font-weight:600;padding:9px 18px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-outline:hover{border-color:var(--brand);color:var(--brand);background:var(--bbg)}
 
-/* Loading spinner */
-.loading{display:flex;align-items:center;gap:12px;padding:32px 20px;color:var(--tx2);font-size:15px}
-.spin{
-  width:22px;height:22px;flex-shrink:0;
-  border:3px solid var(--border);border-top-color:var(--brand);
-  border-radius:50%;animation:spin .7s linear infinite;
-}
+/* ═══ CHART TAB ═══ */
+.chart-ctrl{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.chart-ctrl select,.chart-ctrl input[type=text]{flex:1;min-width:170px;max-width:320px;background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r2);color:var(--tx1);font-family:var(--ff);font-size:14px;padding:9px 12px;outline:none;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
+.chart-ctrl select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238a7860' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer}
+.chart-ctrl input:focus,.chart-ctrl select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(201,125,24,.12)}
+#chart-box{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);box-shadow:var(--sh);min-height:440px}
+
+/* Loading */
+.ld{display:flex;align-items:center;gap:12px;padding:30px 20px;color:var(--tx2);font-size:15px}
+.spin{width:22px;height:22px;flex-shrink:0;border:3px solid var(--bdr);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ═══════════════════════════
-   MOBILE MENU DRAWER
-═══════════════════════════ */
-#mob-drawer{
-  display:none;position:fixed;inset:0;z-index:300;
-}
-#mob-drawer.on{display:flex}
-.drawer-ov{flex:1;background:rgba(0,0,0,.45)}
-.drawer-panel{
-  width:min(300px,88vw);background:#fff;
-  display:flex;flex-direction:column;
-  box-shadow:var(--shadow-lg);overflow-y:auto;
-}
-.drawer-hdr{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:16px 18px;border-bottom:2px solid var(--brand);
-  background:var(--brand-bg);
-}
-.drawer-title{font-size:16px;font-weight:700;color:var(--tx1)}
-.drawer-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx2)}
-.drawer-body{padding:14px 18px;display:flex;flex-direction:column;gap:14px}
-.drawer-nav{display:flex;flex-direction:column;gap:2px}
-.dn-btn{
-  font-family:var(--ff);font-size:15px;font-weight:600;
-  color:var(--tx2);background:none;border:none;
-  padding:11px 14px;border-radius:var(--r2);
-  cursor:pointer;text-align:left;
-  transition:all .15s;
-}
-.dn-btn:hover{background:var(--bg4);color:var(--tx1)}
-.dn-btn.on{background:var(--brand-bg);color:var(--brand)}
-.drawer-divider{height:1px;background:var(--border);margin:4px 0}
-.drawer-fg{display:flex;flex-direction:column;gap:5px}
-.drawer-lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);display:flex;align-items:center;gap:6px}
+/* Empty state */
+.empty{padding:52px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.es-ico{font-size:48px;opacity:.2}
+.es-ttl{font-size:16px;font-weight:600;color:var(--tx2)}
+.es-hint{font-size:14px;color:var(--tx3);max-width:300px;line-height:1.6;text-align:center}
 
-/* ═══════════════════════════
-   RESPONSIVE
-═══════════════════════════ */
+/* ═══ MOBILE DRAWER ═══ */
+#drawer{display:none;position:fixed;inset:0;z-index:300}
+#drawer.on{display:flex}
+.dov{flex:1;background:rgba(0,0,0,.4)}
+.dpanel{width:min(290px,88vw);background:var(--bg2);display:flex;flex-direction:column;box-shadow:var(--sh3);overflow-y:auto}
+.d-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:2px solid var(--brand);background:var(--bbg)}
+.d-title{font-size:15px;font-weight:700}
+.d-x{background:none;border:none;font-size:20px;cursor:pointer;color:var(--tx2)}
+.d-body{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.d-nav{display:flex;flex-direction:column;gap:2px}
+.dn{font-family:var(--ff);font-size:15px;font-weight:600;color:var(--tx2);background:none;border:none;padding:10px 12px;border-radius:var(--r2);cursor:pointer;text-align:left;transition:all .15s}
+.dn:hover{background:var(--bg4)}
+.dn.on{background:var(--bbg);color:var(--brand)}
+.d-div{height:1px;background:var(--bdr)}
+.d-fg{display:flex;flex-direction:column;gap:5px}
+.d-lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3)}
+.d-lnk{font-size:12px;color:var(--tx3)}
+.d-lnk a{color:var(--brand);text-decoration:none}
+
+/* ═══ RESPONSIVE ═══ */
 @media(max-width:768px){
-  .hbg{display:block}
-  .hdr-nav{display:none}
-  .hdr-actions .btn-settings{display:none}
-  #settings-panel{display:none!important}
-
-  #filterbar{padding:10px 14px}
-  .fb-inner{gap:8px}
-  .fb-inner select{min-width:150px}
-  .fb-inner input[type=text]{min-width:140px}
-
-  #app-body{padding:12px 14px 24px}
-
-  table.dt{display:none}
-  .card-list{display:flex}
-  .tbl-outer{display:none}
-
-  .st{padding:10px 14px;font-size:13px}
-  .news-bar{padding:12px 14px}
+  .hbg{display:block}.hnav{display:none}.btn-cfg{display:none}
+  #cfg-panel{display:none!important}
+  #fbar{padding:10px 14px}
+  .fbar-in{gap:8px}
+  .fbar-in select{min-width:150px}
+  #app{padding:12px 14px 24px}
+  table.dt,.tbl-out{display:none}.card-list{display:flex!important}
+  .dp-body{grid-template-columns:1fr}
+  .dp-fund-col{border-top:1px solid var(--bdr);border-right:none}
+  .cfg-grid{grid-template-columns:1fr}
+  .st{padding:9px 13px;font-size:13px}
   .a-body{padding:14px 16px}
-  .chart-ctrl{padding:12px 14px}
 }
 @media(min-width:769px){
   .hbg{display:none!important}
-  table.dt{display:table}
+  table.dt{display:table}.tbl-out{display:block}
   .card-list{display:none!important}
-  .tbl-outer{display:block}
 }
 </style>
 </head>
 <body>
 
-<!-- ═══ HEADER ═══ -->
-<header id="header">
-  <div class="hdr-inner">
-    <a class="hdr-logo" href="#">
-      <span class="hdr-logo-icon">📊</span>
-      <span class="hdr-logo-text">AI <span>股市戰情室</span></span>
-    </a>
-
-    <nav class="hdr-nav">
-      <button class="hn-tab on" data-tab="screen">📊 選股戰情室</button>
-      <button class="hn-tab" data-tab="news">🔍 AI 新聞分析</button>
-      <button class="hn-tab" data-tab="chart">📈 K 線圖</button>
+<!-- HEADER -->
+<header id="hdr">
+  <div class="hdr-in">
+    <a class="logo" href="#"><span class="logo-i">📊</span><span class="logo-t">AI <em>股市戰情室</em></span></a>
+    <nav class="hnav">
+      <button class="hn on" data-tab="screen">📊 選股戰情室</button>
+      <button class="hn" data-tab="news">🔍 AI 新聞分析</button>
+      <button class="hn" data-tab="chart">📈 K 線圖</button>
     </nav>
-
-    <div class="hdr-actions">
-      <span id="nav-st" style="font-size:12px;color:var(--tx4);font-family:var(--fm)"></span>
-      <button class="btn-settings" id="settings-btn">⚙️ API 設定</button>
+    <div class="hdr-r">
+      <span class="nav-st" id="nav-st"></span>
+      <button class="btn-cfg" id="cfg-btn">⚙️ API 設定</button>
     </div>
-
     <button class="hbg" id="hbg-btn">☰</button>
   </div>
 </header>
 
-<!-- ═══ SETTINGS PANEL ═══ -->
-<div id="settings-panel">
-  <div class="sp-title">🔑 API 金鑰設定</div>
-  <div class="sp-grid">
-    <div class="sp-fg">
-      <label class="sp-lbl">Gemini API Key <span id="gk-ok" class="key-ok" style="display:none">✓ 已記住</span></label>
-      <div class="inp-r">
-        <input type="password" id="gk-inp" placeholder="必填 — AI 分析功能" autocomplete="off"
-          style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);font-family:var(--ff);font-size:14px;padding:9px 36px 9px 12px;outline:none;color:var(--tx1);-webkit-appearance:none">
-        <button class="eye" data-for="gk-inp">👁</button>
-      </div>
-      <div class="flink" style="font-size:12px;color:var(--tx3);margin-top:3px">
-        🔗 <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--brand);text-decoration:none">取得 Gemini Key（免費）</a>
-      </div>
+<!-- SETTINGS PANEL -->
+<div id="cfg-panel">
+  <div class="cfg-ttl">🔑 API 金鑰設定</div>
+  <div class="cfg-grid">
+    <div class="cfg-fg">
+      <label class="cfg-lbl">Gemini API Key <span id="gk-ok" class="key-ok" style="display:none">✓ 已記住</span></label>
+      <div class="iw"><input type="password" id="gk-inp" placeholder="必填 — AI 分析功能" autocomplete="off"><button class="eye" data-for="gk-inp">👁</button></div>
+      <div class="cfg-lnk">🔗 <a href="https://aistudio.google.com/app/apikey" target="_blank">取得免費 Gemini Key</a></div>
     </div>
-    <div class="sp-fg">
-      <label class="sp-lbl">Serper Key <span style="font-weight:400;color:var(--tx4)">（選填）</span> <span id="sk-ok" class="key-ok" style="display:none">✓ 已記住</span></label>
-      <div class="inp-r">
-        <input type="password" id="sk-inp" placeholder="無填入則用 Yahoo 新聞" autocomplete="off"
-          style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);font-family:var(--ff);font-size:14px;padding:9px 36px 9px 12px;outline:none;color:var(--tx1);-webkit-appearance:none">
-        <button class="eye" data-for="sk-inp">👁</button>
-      </div>
-      <div class="flink" style="font-size:12px;color:var(--tx3);margin-top:3px">
-        🔗 <a href="https://serper.dev/api-keys" target="_blank" style="color:var(--brand);text-decoration:none">取得 Serper Key（每月 2,500 次免費）</a>
-      </div>
+    <div class="cfg-fg">
+      <label class="cfg-lbl">Serper Key <span style="font-weight:400;color:var(--tx4)">（選填）</span> <span id="sk-ok" class="key-ok" style="display:none">✓ 已記住</span></label>
+      <div class="iw"><input type="password" id="sk-inp" placeholder="無則用 Yahoo 新聞" autocomplete="off"><button class="eye" data-for="sk-inp">👁</button></div>
+      <div class="cfg-lnk">🔗 <a href="https://serper.dev/api-keys" target="_blank">取得 Serper Key（月 2,500 次免費）</a></div>
     </div>
   </div>
-  <div class="sp-note">
-    🔐 API Key 儲存於您的裝置（localStorage），不傳至任何第三方伺服器。換瀏覽器或無痕模式需重新輸入。
-  </div>
+  <div class="cfg-note">🔐 Key 存於您的裝置 localStorage，不傳至任何伺服器。換瀏覽器或無痕模式需重新輸入。</div>
 </div>
 
-<!-- ═══ FILTER BAR ═══ -->
-<div id="filterbar">
-  <div class="fb-inner">
-    <span class="fb-label">族群</span>
+<!-- FILTER BAR -->
+<div id="fbar">
+  <div class="fbar-in">
+    <span class="fb-lbl">族群</span>
     <select id="grp-sel"></select>
-
-    <span class="fb-label">本益比</span>
-    <div class="pe-wrap">
+    <span class="fb-lbl">本益比</span>
+    <div class="pe-row">
       <input type="range" id="pe-range" min="5" max="80" value="25">
-      <span class="pe-num"><span id="pe-val">25</span>x</span>
+      <span class="pe-n"><span id="pe-val">25</span>x</span>
     </div>
-
     <input type="text" id="tks-inp" placeholder="股票代號，逗號分隔：2330.TW, NVDA, PLTR">
     <button class="btn-run" id="run-btn">🚀 開始分析</button>
-
     <div id="prog-wrap">
       <div class="prog-row">
         <span class="prog-txt" id="prog-lbl">分析中...</span>
@@ -719,32 +332,53 @@ table.dt td{padding:10px 14px;vertical-align:middle}
   </div>
 </div>
 
-<!-- ═══ BODY ═══ -->
-<main id="app-body">
+<!-- APP BODY -->
+<main id="app">
 
   <!-- Screen pane -->
   <div class="pane on" id="pane-screen">
-    <div class="status-bar">
-      <div class="stabs">
-        <button class="st on" data-sub="gem">💎 落難績優股 <span class="st-badge" id="cnt-g">0</span></button>
-        <button class="st" data-sub="buy">🚀 強力買進 <span class="st-badge" id="cnt-b">0</span></button>
-        <button class="st" data-sub="sell">📉 建議賣出 <span class="st-badge" id="cnt-s">0</span></button>
-        <button class="st" data-sub="watch">👀 觀望中 <span class="st-badge" id="cnt-w">0</span></button>
-      </div>
-      <span class="status-time" id="nav-st2"></span>
+    <div class="stabs">
+      <button class="st on" data-sub="gem">💎 落難績優股 <span class="stb" id="cnt-g">0</span></button>
+      <button class="st" data-sub="buy">🚀 強力買進 <span class="stb" id="cnt-b">0</span></button>
+      <button class="st" data-sub="sell">📉 建議賣出 <span class="stb" id="cnt-s">0</span></button>
+      <button class="st" data-sub="watch">👀 觀望中 <span class="stb" id="cnt-w">0</span></button>
     </div>
+    <div class="spane on" id="sub-gem"><div class="empty"><div class="es-ico">💎</div><p class="es-ttl">請先執行選股分析</p><p class="es-hint">選擇族群後點擊「🚀 開始分析」</p></div></div>
+    <div class="spane" id="sub-buy"><div class="empty"><div class="es-ico">🚀</div><p class="es-ttl">請先執行選股分析</p></div></div>
+    <div class="spane" id="sub-sell"><div class="empty"><div class="es-ico">📉</div><p class="es-ttl">請先執行選股分析</p></div></div>
+    <div class="spane" id="sub-watch"><div class="empty"><div class="es-ico">👀</div><p class="es-ttl">請先執行選股分析</p></div></div>
 
-    <div class="sub-pane on" id="sub-gem">
-      <div class="empty-state"><div class="es-icon">💎</div><p class="es-title">請先執行選股分析</p><p class="es-hint">選擇上方族群，點擊「🚀 開始分析」掃描所選股票</p></div>
-    </div>
-    <div class="sub-pane" id="sub-buy">
-      <div class="empty-state"><div class="es-icon">🚀</div><p class="es-title">請先執行選股分析</p></div>
-    </div>
-    <div class="sub-pane" id="sub-sell">
-      <div class="empty-state"><div class="es-icon">📉</div><p class="es-title">請先執行選股分析</p></div>
-    </div>
-    <div class="sub-pane" id="sub-watch">
-      <div class="empty-state"><div class="es-icon">👀</div><p class="es-title">請先執行選股分析</p></div>
+    <!-- Stock Detail Panel (inside screen pane) -->
+    <div id="detail-panel">
+      <div class="dp-hdr">
+        <button class="dp-back" id="dp-back-btn">← 返回列表</button>
+        <span class="dp-ticker" id="dp-ticker"></span>
+        <span class="dp-name" id="dp-name"></span>
+        <span class="dp-price" id="dp-price"></span>
+        <span class="dp-chg" id="dp-chg"></span>
+        <span class="dp-sig" id="dp-sig"></span>
+      </div>
+      <div class="dp-metrics" id="dp-metrics"></div>
+      <div class="dp-body">
+        <div class="dp-chart-col">
+          <div class="dp-section-title">📈 K 線圖（含長線均線）</div>
+          <div id="dp-kchart"><div class="ld"><div class="spin"></div>載入中...</div></div>
+        </div>
+        <div class="dp-fund-col">
+          <div>
+            <div class="dp-section-title">📊 基本面指標</div>
+            <table class="fund-table" id="dp-fund-table"></table>
+          </div>
+          <div>
+            <div class="dp-section-title">📉 季度 EPS 趨勢</div>
+            <div id="dp-eps-chart"><div class="ld"><div class="spin"></div>載入中...</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="dp-ai">
+        <button class="btn-ai-news" id="dp-ai-btn">🧠 AI 新聞深度分析</button>
+        <div id="dp-ai-result"></div>
+      </div>
     </div>
   </div>
 
@@ -755,10 +389,9 @@ table.dt td{padding:10px 14px;vertical-align:middle}
       <button class="btn-primary" id="news-btn">🧠 AI 深度分析</button>
     </div>
     <div id="news-result">
-      <div class="empty-state" style="background:#fff;border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-sm)">
-        <div class="es-icon">🔍</div>
-        <p class="es-title">輸入股票代號後點擊分析</p>
-        <p class="es-hint">或在選股結果表格點選「🔍 AI」快速跳轉<br>需先在右上角 ⚙️ 填入 Gemini API Key</p>
+      <div class="empty" style="background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);box-shadow:var(--sh)">
+        <div class="es-ico">🔍</div><p class="es-ttl">輸入股票代號後點擊分析</p>
+        <p class="es-hint">或從選股結果點選「📋 查看詳情」後使用 AI 分析<br>需先設定 Gemini API Key（右上角 ⚙️）</p>
       </div>
     </div>
   </div>
@@ -766,101 +399,79 @@ table.dt td{padding:10px 14px;vertical-align:middle}
   <!-- Chart pane -->
   <div class="pane" id="pane-chart">
     <div class="chart-ctrl">
-      <select id="chart-sel"><option value="">— 從分析結果選擇股票 —</option></select>
+      <select id="chart-sel"><option value="">— 從分析結果選擇 —</option></select>
       <input type="text" id="chart-inp" placeholder="或直接輸入：2330.TW / NVDA">
       <button class="btn-outline" id="chart-btn">繪製圖表</button>
     </div>
-    <div id="chart-box">
-      <div class="empty-state"><div class="es-icon">📈</div><p class="es-title">季線 · 年線 · 5年線 · 20年線</p><p class="es-hint">選擇或輸入股票後繪製長線均線視圖</p></div>
-    </div>
+    <div id="chart-box"><div class="empty"><div class="es-ico">📈</div><p class="es-ttl">季線 · 年線 · 5年線 · 20年線</p><p class="es-hint">選擇或輸入股票後繪製長線均線視圖</p></div></div>
   </div>
 
 </main>
 
-<!-- ═══ MOBILE DRAWER ═══ -->
-<div id="mob-drawer">
-  <div class="drawer-ov" id="drawer-ov"></div>
-  <div class="drawer-panel">
-    <div class="drawer-hdr">
-      <span class="drawer-title">📊 AI 股市戰情室</span>
-      <button class="drawer-close" id="drawer-close">✕</button>
-    </div>
-    <div class="drawer-body">
-      <div class="drawer-nav">
-        <button class="dn-btn on" data-dtab="screen">📊 選股戰情室</button>
-        <button class="dn-btn" data-dtab="news">🔍 AI 新聞分析</button>
-        <button class="dn-btn" data-dtab="chart">📈 K 線圖</button>
+<!-- MOBILE DRAWER -->
+<div id="drawer">
+  <div class="dov" id="dov"></div>
+  <div class="dpanel">
+    <div class="d-hdr"><span class="d-title">📊 AI 股市戰情室</span><button class="d-x" id="d-x">✕</button></div>
+    <div class="d-body">
+      <div class="d-nav">
+        <button class="dn on" data-dtab="screen">📊 選股戰情室</button>
+        <button class="dn" data-dtab="news">🔍 AI 新聞分析</button>
+        <button class="dn" data-dtab="chart">📈 K 線圖</button>
       </div>
-      <div class="drawer-divider"></div>
-      <div class="drawer-fg">
-        <label class="drawer-lbl">Gemini Key <span id="gk-ok2" class="key-ok" style="display:none">✓</span></label>
-        <div class="inp-r">
-          <input type="password" id="gk-mob" placeholder="必填" autocomplete="off"
-            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);font-family:var(--ff);font-size:14px;padding:9px 36px 9px 12px;outline:none;color:var(--tx1)">
-          <button class="eye" data-for="gk-mob">👁</button>
-        </div>
+      <div class="d-div"></div>
+      <div class="d-fg">
+        <label class="d-lbl">Gemini Key <span id="gk-ok2" class="key-ok" style="display:none">✓</span></label>
+        <div class="iw"><input type="password" id="gk-mob" placeholder="必填" autocomplete="off"><button class="eye" data-for="gk-mob">👁</button></div>
       </div>
-      <div class="drawer-fg">
-        <label class="drawer-lbl">Serper Key <span style="font-weight:400;color:var(--tx4)">選填</span> <span id="sk-ok2" class="key-ok" style="display:none">✓</span></label>
-        <div class="inp-r">
-          <input type="password" id="sk-mob" placeholder="選填" autocomplete="off"
-            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);font-family:var(--ff);font-size:14px;padding:9px 36px 9px 12px;outline:none;color:var(--tx1)">
-          <button class="eye" data-for="sk-mob">👁</button>
-        </div>
+      <div class="d-fg">
+        <label class="d-lbl">Serper Key <span style="font-weight:400;color:var(--tx4)">選填</span> <span id="sk-ok2" class="key-ok" style="display:none">✓</span></label>
+        <div class="iw"><input type="password" id="sk-mob" placeholder="選填" autocomplete="off"><button class="eye" data-for="sk-mob">👁</button></div>
       </div>
-      <div style="font-size:12px;color:var(--tx3);background:var(--brand-bg);border:1px solid var(--brand-bdr);border-radius:var(--r2);padding:9px 12px;line-height:1.65">
-        🔐 Key 儲存於裝置，不外傳。<br>
-        🔗 <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--brand)">取得 Gemini Key</a>　
-        <a href="https://serper.dev/api-keys" target="_blank" style="color:var(--brand)">取得 Serper Key</a>
-      </div>
+      <div class="d-lnk">🔗 <a href="https://aistudio.google.com/app/apikey" target="_blank">Gemini Key</a>　<a href="https://serper.dev/api-keys" target="_blank">Serper Key</a></div>
     </div>
   </div>
 </div>
 
 <script>
 'use strict';
-/* ─── DATA ─── */
-const NAMES={"2330.TW":"台積電","2303.TW":"聯電","5347.TWO":"世界先進","6770.TW":"力積電","3711.TW":"日月光投控","2454.TW":"聯發科","3034.TW":"聯詠","2379.TW":"瑞昱","3035.TW":"智原","3443.TW":"創意","3661.TW":"世芯-KY","3529.TW":"力旺","6531.TW":"愛普","6643.TW":"M31","5274.TW":"信驊","5269.TW":"祥碩","6415.TW":"矽力-KY","2458.TW":"義隆","6202.TW":"盛群","6138.TW":"茂達","8016.TW":"矽創","3227.TWO":"原相","4966.TW":"譜瑞-KY","4919.TW":"新唐","2449.TW":"京元電","6239.TW":"力成","6147.TW":"頎邦","8150.TW":"南茂","3264.TWO":"欣銓","3131.TW":"弘塑","3680.TW":"家登","6196.TW":"帆宣","6187.TWO":"萬潤","5443.TWO":"均豪","6640.TWO":"均華","3583.TW":"辛耘","5536.TW":"聖暉","2404.TW":"漢唐","6139.TW":"亞翔","5483.TWO":"中美晶","6488.TW":"環球晶","3532.TW":"台勝科","1560.TW":"中砂","3450.TW":"聯鈞","3081.TWO":"聯亞","6442.TW":"光聖","2317.TW":"鴻海","2382.TW":"廣達","3231.TW":"緯創","6669.TW":"緯穎","2356.TW":"英業達","2376.TW":"技嘉","2357.TW":"華碩","2324.TW":"仁寶","4938.TW":"和碩","2301.TW":"光寶科","2353.TW":"宏碁","2377.TW":"微星","3706.TW":"神達","8210.TW":"勤誠","2049.TW":"上銀","3017.TW":"奇鋐","3324.TWO":"雙鴻","3653.TW":"健策","2421.TW":"建準","6230.TW":"超眾","3483.TW":"力致","3338.TW":"泰碩","3005.TW":"神基","2308.TW":"台達電","2408.TW":"南亞科","2344.TW":"華邦電","2337.TW":"旺宏","3260.TWO":"威剛","8299.TWO":"群聯","2451.TW":"創見","3006.TW":"晶豪科","5289.TW":"宜鼎","2409.TW":"友達","3481.TW":"群創","6116.TW":"彩晶","8069.TWO":"元太","6176.TW":"瑞儀","4961.TW":"天鈺","3545.TW":"敦泰","3037.TW":"欣興","8046.TW":"南電","3189.TW":"景碩","2368.TW":"金像電","2313.TW":"華通","6269.TW":"台郡","4958.TW":"臻鼎-KY","2383.TW":"台光電","6213.TW":"聯茂","6274.TW":"台燿","2327.TW":"國巨","2492.TW":"華新科","3026.TW":"禾伸堂","1513.TW":"中興電","1519.TW":"華城","1503.TW":"士電","1504.TW":"東元","1514.TW":"亞力","1605.TW":"華新","1609.TW":"大亞","6806.TW":"森崴能源","9958.TW":"世紀鋼","3708.TW":"上緯","6443.TW":"元晶","2542.TW":"興富發","2548.TW":"華固","2501.TW":"國建","2603.TW":"長榮","2609.TW":"陽明","2615.TW":"萬海","2606.TW":"裕民","2637.TW":"慧洋-KY","2618.TW":"長榮航","2610.TW":"華航","2634.TW":"漢翔","2645.TW":"長榮航太","2002.TW":"中鋼","2014.TW":"中鴻","2027.TW":"大成鋼","1101.TW":"台泥","1102.TW":"亞泥","1301.TW":"台塑","1303.TW":"南亞","1326.TW":"台化","6505.TW":"台塑化","1402.TW":"遠東新","1476.TW":"儒鴻","1477.TW":"聚陽","9910.TW":"豐泰","9904.TW":"寶成","9914.TW":"美利達","9921.TW":"巨大","2201.TW":"裕隆","2204.TW":"中華","2207.TW":"和泰車","2105.TW":"正新","1216.TW":"統一","5903.TW":"全家","5904.TW":"寶雅","2881.TW":"富邦金","2882.TW":"國泰金","2891.TW":"中信金","2886.TW":"兆豐金","2884.TW":"玉山金","2892.TW":"第一金","5880.TW":"合庫金","2885.TW":"元大金","2880.TW":"華南金","2883.TW":"開發金","2887.TW":"台新金","2890.TW":"永豐金","2888.TW":"新光金","2889.TW":"國票金","2834.TW":"臺企銀","5876.TW":"上海商銀","2801.TW":"彰銀","1795.TW":"美時","6446.TW":"藥華藥","4743.TWO":"合一","1760.TW":"寶齡富錦","4147.TW":"中裕","6550.TW":"北極星","4162.TWO":"智擎","6472.TWO":"保瑞","AAPL":"Apple","MSFT":"Microsoft","GOOG":"Alphabet","AMZN":"Amazon","NVDA":"NVIDIA","TSLA":"Tesla","META":"Meta","PLTR":"Palantir","SNOW":"Snowflake","MDB":"MongoDB","ESTC":"Elastic","CRWD":"CrowdStrike","PANW":"Palo Alto","FTNT":"Fortinet","ZS":"Zscaler","OKTA":"Okta","NET":"Cloudflare","S":"SentinelOne","CRM":"Salesforce","ADBE":"Adobe","ORCL":"Oracle","NOW":"ServiceNow","SAP":"SAP","INTU":"Intuit","WDAY":"Workday","TEAM":"Atlassian","DDOG":"Datadog","AMD":"AMD","INTC":"Intel","QCOM":"Qualcomm","AVGO":"Broadcom","MU":"Micron","TXN":"TI","ASML":"ASML","TSM":"台積電ADR","ARM":"Arm","AMAT":"Applied Materials","LRCX":"Lam Research","ADI":"Analog Devices","MRVL":"Marvell","KLAC":"KLA","ON":"ON Semi","V":"Visa","MA":"Mastercard","PYPL":"PayPal","SQ":"Block","COIN":"Coinbase","HOOD":"Robinhood","SHOP":"Shopify","MELI":"MercadoLibre","SE":"Sea Ltd","PDD":"Pinduoduo","BABA":"Alibaba","JD":"JD.com","UBER":"Uber","DASH":"DoorDash","ABNB":"Airbnb","BKNG":"Booking","NFLX":"Netflix","DIS":"Disney","SPOT":"Spotify","LLY":"Eli Lilly","NVO":"Novo Nordisk","JNJ":"J&J","PFE":"Pfizer","MRK":"Merck","UNH":"UnitedHealth","ABBV":"AbbVie","AMGN":"Amgen","ISRG":"Intuitive Surgical","VRTX":"Vertex","LMT":"Lockheed Martin","RTX":"Raytheon","BA":"Boeing","GD":"General Dynamics","NOC":"Northrop Grumman","AXON":"Axon","GE":"GE Aerospace","XOM":"Exxon Mobil","CVX":"Chevron","COP":"ConocoPhillips","COST":"Costco","WMT":"Walmart","PG":"P&G","KO":"Coca-Cola","PEP":"PepsiCo","MCD":"McDonald's","SBUX":"Starbucks","NKE":"Nike","SPY":"S&P500 ETF","QQQ":"Nasdaq100 ETF","SOXX":"半導體ETF","TLT":"20年美債ETF","GLD":"黃金ETF","ARKK":"ARK Innovation","SMH":"半導體ETF2","XLE":"能源ETF","XLV":"醫療ETF","XLF":"金融ETF"};
-const PRESETS={"📝 自選觀察清單":{c:"2330.TW, 2382.TW, 2603.TW, TSLA, NVDA, PLTR",p:25},"🤖 台股-AI 伺服器/組裝":{c:"2317.TW, 2382.TW, 3231.TW, 6669.TW, 2356.TW, 2376.TW, 2357.TW, 2324.TW, 4938.TW, 2301.TW, 2308.TW, 2377.TW, 8210.TW, 2049.TW",p:25},"💡 台股-半導體 IC設計":{c:"2454.TW, 3034.TW, 2379.TW, 3035.TW, 3443.TW, 3661.TW, 3529.TW, 6531.TW, 6643.TW, 5269.TW, 6415.TW, 5274.TW, 6138.TW, 3227.TWO, 4966.TW, 4919.TW",p:35},"🏭 台股-晶圓代工/設備":{c:"2330.TW, 2303.TW, 5347.TWO, 6770.TW, 3711.TW, 3131.TW, 3680.TW, 6196.TW, 6187.TWO, 5443.TWO, 6640.TWO, 6488.TW, 3532.TW, 3450.TW, 3081.TWO",p:22},"💾 台股-記憶體/封測/面板":{c:"2408.TW, 2344.TW, 2337.TW, 3260.TWO, 8299.TWO, 2449.TW, 6239.TW, 2409.TW, 3481.TW, 6116.TW, 8069.TWO, 6176.TW, 4961.TW",p:15},"❄️ 台股-散熱/PCB/被動":{c:"3017.TW, 3324.TWO, 3653.TW, 2421.TW, 3037.TW, 8046.TW, 3189.TW, 2368.TW, 2313.TW, 2383.TW, 6274.TW, 2327.TW, 2492.TW, 3026.TW",p:20},"🔌 台股-重電/綠能/營建":{c:"1513.TW, 1519.TW, 1503.TW, 1504.TW, 1605.TW, 6806.TW, 9958.TW, 3708.TW, 6443.TW, 1609.TW, 1514.TW, 2542.TW, 2548.TW",p:25},"🚢 台股-航運/航空/車":{c:"2603.TW, 2609.TW, 2615.TW, 2606.TW, 2637.TW, 2618.TW, 2610.TW, 2634.TW, 2201.TW, 2204.TW, 2207.TW, 2105.TW",p:12},"🛢️ 台股-塑化/鋼鐵/傳產":{c:"1301.TW, 1303.TW, 1326.TW, 6505.TW, 2002.TW, 2014.TW, 1101.TW, 1402.TW, 1476.TW, 9910.TW, 9914.TW, 1216.TW",p:15},"💰 台股-金融金控":{c:"2881.TW, 2882.TW, 2891.TW, 2886.TW, 2884.TW, 2892.TW, 5880.TW, 2885.TW, 2880.TW, 2883.TW, 2887.TW, 2890.TW",p:15},"🇺🇸 美股-科技七雄 Mag7":{c:"AAPL, MSFT, GOOG, AMZN, NVDA, TSLA, META",p:30},"🌌 美股-AI/大數據/資安":{c:"PLTR, SNOW, MDB, ESTC, CRWD, PANW, FTNT, ZS, OKTA, NET, S",p:40},"☁️ 美股-SaaS/雲端":{c:"CRM, ADBE, ORCL, NOW, SAP, INTU, WDAY, TEAM, DDOG",p:35},"⚙️ 美股-半導體巨頭":{c:"AMD, INTC, QCOM, AVGO, MU, TXN, ASML, TSM, ARM, AMAT, LRCX, ADI, MRVL, KLAC, ON",p:25},"💊 美股-醫療/製藥":{c:"LLY, NVO, JNJ, PFE, MRK, UNH, ABBV, AMGN, ISRG, VRTX",p:25},"🛍️ 美股-消費/ETF":{c:"COST, WMT, PG, KO, PEP, MCD, SBUX, NKE, NFLX, DIS, SPY, QQQ, SOXX, TLT, GLD",p:22}};
+/* ─ DATA ─ */
+const NAMES={"2330.TW":"台積電","2303.TW":"聯電","5347.TWO":"世界先進","6770.TW":"力積電","3711.TW":"日月光投控","2454.TW":"聯發科","3034.TW":"聯詠","2379.TW":"瑞昱","3035.TW":"智原","3443.TW":"創意","3661.TW":"世芯-KY","3529.TW":"力旺","6531.TW":"愛普","6643.TW":"M31","5274.TW":"信驊","5269.TW":"祥碩","6415.TW":"矽力-KY","2458.TW":"義隆","6202.TW":"盛群","6138.TW":"茂達","8016.TW":"矽創","3227.TWO":"原相","4966.TW":"譜瑞-KY","4919.TW":"新唐","2449.TW":"京元電","6239.TW":"力成","6147.TW":"頎邦","8150.TW":"南茂","3264.TWO":"欣銓","3131.TW":"弘塑","3680.TW":"家登","6196.TW":"帆宣","6187.TWO":"萬潤","5443.TWO":"均豪","6640.TWO":"均華","3583.TW":"辛耘","5536.TW":"聖暉","2404.TW":"漢唐","6139.TW":"亞翔","5483.TWO":"中美晶","6488.TW":"環球晶","3532.TW":"台勝科","1560.TW":"中砂","3450.TW":"聯鈞","3081.TWO":"聯亞","6442.TW":"光聖","2317.TW":"鴻海","2382.TW":"廣達","3231.TW":"緯創","6669.TW":"緯穎","2356.TW":"英業達","2376.TW":"技嘉","2357.TW":"華碩","2324.TW":"仁寶","4938.TW":"和碩","2301.TW":"光寶科","2353.TW":"宏碁","2377.TW":"微星","3706.TW":"神達","8210.TW":"勤誠","2049.TW":"上銀","3017.TW":"奇鋐","3324.TWO":"雙鴻","3653.TW":"健策","2421.TW":"建準","6230.TW":"超眾","3483.TW":"力致","3338.TW":"泰碩","3005.TW":"神基","2308.TW":"台達電","2408.TW":"南亞科","2344.TW":"華邦電","2337.TW":"旺宏","3260.TWO":"威剛","8299.TWO":"群聯","2451.TW":"創見","3006.TW":"晶豪科","5289.TW":"宜鼎","2409.TW":"友達","3481.TW":"群創","6116.TW":"彩晶","8069.TWO":"元太","6176.TW":"瑞儀","4961.TW":"天鈺","3545.TW":"敦泰","3037.TW":"欣興","8046.TW":"南電","3189.TW":"景碩","2368.TW":"金像電","2313.TW":"華通","6269.TW":"台郡","4958.TW":"臻鼎-KY","2383.TW":"台光電","6213.TW":"聯茂","6274.TW":"台燿","2327.TW":"國巨","2492.TW":"華新科","3026.TW":"禾伸堂","1513.TW":"中興電","1519.TW":"華城","1503.TW":"士電","1504.TW":"東元","1514.TW":"亞力","1605.TW":"華新","1609.TW":"大亞","6806.TW":"森崴能源","9958.TW":"世紀鋼","3708.TW":"上緯","6443.TW":"元晶","2542.TW":"興富發","2548.TW":"華固","2501.TW":"國建","2603.TW":"長榮","2609.TW":"陽明","2615.TW":"萬海","2606.TW":"裕民","2637.TW":"慧洋-KY","2618.TW":"長榮航","2610.TW":"華航","2634.TW":"漢翔","2645.TW":"長榮航太","2002.TW":"中鋼","2014.TW":"中鴻","2027.TW":"大成鋼","1101.TW":"台泥","1102.TW":"亞泥","1301.TW":"台塑","1303.TW":"南亞","1326.TW":"台化","6505.TW":"台塑化","1402.TW":"遠東新","1476.TW":"儒鴻","1477.TW":"聚陽","9910.TW":"豐泰","9904.TW":"寶成","9914.TW":"美利達","9921.TW":"巨大","2201.TW":"裕隆","2204.TW":"中華","2207.TW":"和泰車","2105.TW":"正新","1216.TW":"統一","5903.TW":"全家","5904.TW":"寶雅","2881.TW":"富邦金","2882.TW":"國泰金","2891.TW":"中信金","2886.TW":"兆豐金","2884.TW":"玉山金","2892.TW":"第一金","5880.TW":"合庫金","2885.TW":"元大金","2880.TW":"華南金","2883.TW":"開發金","2887.TW":"台新金","2890.TW":"永豐金","2888.TW":"新光金","2889.TW":"國票金","2834.TW":"臺企銀","5876.TW":"上海商銀","2801.TW":"彰銀","1795.TW":"美時","6446.TW":"藥華藥","4743.TWO":"合一","1760.TW":"寶齡富錦","4147.TW":"中裕","6550.TW":"北極星","4162.TWO":"智擎","6472.TWO":"保瑞","AAPL":"Apple","MSFT":"Microsoft","GOOG":"Alphabet","AMZN":"Amazon","NVDA":"NVIDIA","TSLA":"Tesla","META":"Meta","PLTR":"Palantir","SNOW":"Snowflake","MDB":"MongoDB","ESTC":"Elastic","CRWD":"CrowdStrike","PANW":"Palo Alto","FTNT":"Fortinet","ZS":"Zscaler","OKTA":"Okta","NET":"Cloudflare","S":"SentinelOne","CRM":"Salesforce","ADBE":"Adobe","ORCL":"Oracle","NOW":"ServiceNow","SAP":"SAP","INTU":"Intuit","WDAY":"Workday","TEAM":"Atlassian","DDOG":"Datadog","AMD":"AMD","INTC":"Intel","QCOM":"Qualcomm","AVGO":"Broadcom","MU":"Micron","TXN":"TI","ASML":"ASML","TSM":"台積電ADR","ARM":"Arm","AMAT":"Applied Materials","LRCX":"Lam Research","ADI":"Analog Devices","MRVL":"Marvell","KLAC":"KLA","ON":"ON Semi","V":"Visa","MA":"Mastercard","PYPL":"PayPal","SQ":"Block","COIN":"Coinbase","HOOD":"Robinhood","SHOP":"Shopify","MELI":"MercadoLibre","SE":"Sea Ltd","PDD":"Pinduoduo","BABA":"Alibaba","JD":"JD.com","UBER":"Uber","DASH":"DoorDash","ABNB":"Airbnb","BKNG":"Booking","NFLX":"Netflix","DIS":"Disney","SPOT":"Spotify","LLY":"Eli Lilly","NVO":"Novo Nordisk","JNJ":"J&J","PFE":"Pfizer","MRK":"Merck","UNH":"UnitedHealth","ABBV":"AbbVie","AMGN":"Amgen","ISRG":"Intuitive Surgical","VRTX":"Vertex","LMT":"Lockheed Martin","RTX":"Raytheon","BA":"Boeing","GD":"General Dynamics","NOC":"Northrop Grumman","AXON":"Axon","GE":"GE Aerospace","XOM":"Exxon Mobil","CVX":"Chevron","COP":"ConocoPhillips","COST":"Costco","WMT":"Walmart","PG":"P&G","KO":"Coca-Cola","PEP":"PepsiCo","MCD":"McDonald's","SBUX":"Starbucks","NKE":"Nike","SPY":"S&P500 ETF","QQQ":"Nasdaq100 ETF","SOXX":"半導體ETF","TLT":"20年美債ETF","GLD":"黃金ETF","ARKK":"ARK Innovation","SMH":"半導體ETF","XLE":"能源ETF","XLV":"醫療ETF","XLF":"金融ETF"};
+const PRESETS={"📝 自選觀察清單":{c:"2330.TW, 2382.TW, 2603.TW, TSLA, NVDA, PLTR",p:25},"🤖 台股-AI 伺服器/組裝":{c:"2317.TW, 2382.TW, 3231.TW, 6669.TW, 2356.TW, 2376.TW, 2357.TW, 2324.TW, 4938.TW, 2301.TW, 2308.TW, 2377.TW, 8210.TW, 2049.TW",p:25},"💡 台股-半導體 IC設計":{c:"2454.TW, 3034.TW, 2379.TW, 3035.TW, 3443.TW, 3661.TW, 3529.TW, 6531.TW, 6643.TW, 5269.TW, 6415.TW, 5274.TW, 6138.TW, 3227.TWO, 4966.TW",p:35},"🏭 台股-晶圓代工/設備":{c:"2330.TW, 2303.TW, 5347.TWO, 6770.TW, 3711.TW, 3131.TW, 3680.TW, 6196.TW, 6187.TWO, 5443.TWO, 6640.TWO, 6488.TW, 3532.TW",p:22},"💾 台股-記憶體/封測/面板":{c:"2408.TW, 2344.TW, 2337.TW, 3260.TWO, 8299.TWO, 2449.TW, 6239.TW, 2409.TW, 3481.TW, 6116.TW, 8069.TWO, 6176.TW",p:15},"❄️ 台股-散熱/PCB/被動":{c:"3017.TW, 3324.TWO, 3653.TW, 2421.TW, 3037.TW, 8046.TW, 3189.TW, 2368.TW, 2313.TW, 2383.TW, 6274.TW, 2327.TW",p:20},"🔌 台股-重電/綠能":{c:"1513.TW, 1519.TW, 1503.TW, 1504.TW, 1605.TW, 6806.TW, 9958.TW, 3708.TW, 6443.TW, 1609.TW",p:25},"🚢 台股-航運/航空/車":{c:"2603.TW, 2609.TW, 2615.TW, 2606.TW, 2637.TW, 2618.TW, 2610.TW, 2634.TW, 2201.TW, 2207.TW",p:12},"🛢️ 台股-塑化/鋼鐵/傳產":{c:"1301.TW, 1303.TW, 1326.TW, 6505.TW, 2002.TW, 2014.TW, 1101.TW, 1402.TW, 1476.TW, 9910.TW",p:15},"💰 台股-金融金控":{c:"2881.TW, 2882.TW, 2891.TW, 2886.TW, 2884.TW, 2892.TW, 5880.TW, 2885.TW, 2880.TW, 2883.TW",p:15},"🇺🇸 美股-科技七雄 Mag7":{c:"AAPL, MSFT, GOOG, AMZN, NVDA, TSLA, META",p:30},"🌌 美股-AI/大數據/資安":{c:"PLTR, SNOW, MDB, CRWD, PANW, FTNT, ZS, OKTA, NET, S",p:40},"☁️ 美股-SaaS/雲端":{c:"CRM, ADBE, ORCL, NOW, SAP, INTU, WDAY, TEAM, DDOG",p:35},"⚙️ 美股-半導體":{c:"AMD, INTC, QCOM, AVGO, MU, TXN, ASML, TSM, ARM, AMAT, LRCX, MRVL",p:25},"💊 美股-醫療":{c:"LLY, NVO, JNJ, PFE, MRK, UNH, ABBV, AMGN, ISRG, VRTX",p:25},"🛍️ 美股-消費/ETF":{c:"COST, WMT, PG, KO, PEP, MCD, SBUX, NKE, NFLX, DIS, SPY, QQQ, SOXX, TLT, GLD",p:22}};
 
-const ST={res:[],cache:{},busy:false};
+const ST={res:[],cache:{},busy:false,curTicker:null};
 const $=id=>document.getElementById(id);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const isMob=()=>window.innerWidth<769;
 function getName(t){t=t.trim().toUpperCase();return NAMES[t]||(t.includes('.TWO')?NAMES[t.replace('.TWO','.TW')]:t.includes('.TW')?NAMES[t.replace('.TW','.TWO')]:null)||t;}
 
-/* ─── KEYS ─── */
-/* Sync desktop ↔ mobile key inputs */
+/* ─ KEY STORAGE ─ */
+/* Reads key from input OR localStorage fallback */
+function getKey(id){
+  const lk=id==='gk'?'_gk':'_sk';
+  const d=id==='gk'?$('gk-inp'):$('sk-inp');
+  const m=id==='gk'?$('gk-mob'):$('sk-mob');
+  return(d?.value.trim()||m?.value.trim()||localStorage.getItem(lk)||'').trim();
+}
 function syncKeys(){
   const g=localStorage.getItem('_gk')||'',s=localStorage.getItem('_sk')||'';
-  [$('gk-inp'),$('gk-mob')].forEach(el=>{if(el)el.value=g});
-  [$('sk-inp'),$('sk-mob')].forEach(el=>{if(el)el.value=s});
-  ['gk-ok','gk-ok2'].forEach(id=>{const el=$(id);if(el)el.style.display=g?'inline':'none';});
-  ['sk-ok','sk-ok2'].forEach(id=>{const el=$(id);if(el)el.style.display=s?'inline':'none';});
+  [$('gk-inp'),$('gk-mob')].forEach(el=>{if(el)el.value=g;});
+  [$('sk-inp'),$('sk-mob')].forEach(el=>{if(el)el.value=s;});
+  ['gk-ok','gk-ok2'].forEach(id=>{const e=$(id);if(e)e.style.display=g?'inline':'none';});
+  ['sk-ok','sk-ok2'].forEach(id=>{const e=$(id);if(e)e.style.display=s?'inline':'none';});
 }
 function bindKeys(){
-  [['gk-inp','gk-mob'],['sk-inp','sk-mob']].forEach(([a,b],i)=>{
-    const key=i===0?'_gk':'_sk';
-    const okIds=i===0?['gk-ok','gk-ok2']:['sk-ok','sk-ok2'];
+  [['gk-inp','gk-mob','_gk',['gk-ok','gk-ok2']],['sk-inp','sk-mob','_sk',['sk-ok','sk-ok2']]].forEach(([a,b,lk,oks])=>{
     [a,b].forEach(id=>{
       const el=$(id);if(!el)return;
       el.addEventListener('input',e=>{
-        const v=e.target.value;
-        localStorage.setItem(key,v);
+        const v=e.target.value;localStorage.setItem(lk,v);
         [$( a),$( b)].forEach(x=>{if(x&&x!==e.target)x.value=v;});
-        okIds.forEach(oid=>{const ox=$(oid);if(ox)ox.style.display=v?'inline':'none';});
+        oks.forEach(ok=>{const o=$(ok);if(o)o.style.display=v?'inline':'none';});
       });
     });
   });
 }
-function getKey(id){
-  // try desktop first, then mobile
-  const v=$('gk-inp')?.value.trim();
-  if(id==='gk')return $('gk-inp')?.value.trim()||$('gk-mob')?.value.trim()||'';
-  return $('sk-inp')?.value.trim()||$('sk-mob')?.value.trim()||'';
-}
-
-/* ─── EYE TOGGLE ─── */
 function bindEyes(){
   document.querySelectorAll('.eye').forEach(b=>b.addEventListener('click',()=>{
     const inp=$(b.dataset.for);if(!inp)return;
@@ -869,46 +480,50 @@ function bindEyes(){
   }));
 }
 
-/* ─── CORS FETCH ─── */
+/* ─ CORS FETCH ─ */
 async function cget(url){
   for(const px of[u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`]){
     try{const r=await fetch(px(url),{signal:AbortSignal.timeout(25000)});if(!r.ok)continue;return JSON.parse(await r.text());}catch{}
-  }
-  throw new Error('Fetch failed');
+  }throw new Error('Fetch failed');
 }
 
-/* ─── YAHOO ─── */
+/* ─ YAHOO ─ */
 async function fetchHist(t){
   const p2=Math.floor(Date.now()/1000),p1=p2-25*365*24*3600;
   const d=await cget(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?interval=1d&period1=${p1}&period2=${p2}`);
   const res=d.chart?.result?.[0];if(!res)throw new Error('No data');
   const ts=res.timestamp,q=res.indicators.quote[0],ac=res.indicators.adjclose?.[0]?.adjclose,raw=ac||q.close;
   const o={ts:[],o:[],h:[],l:[],c:[],v:[]};
-  for(let i=0;i<raw.length;i++){if(raw[i]!=null&&!isNaN(raw[i])){o.ts.push(ts[i]);o.o.push(q.open[i]??raw[i]);o.h.push(q.high[i]??raw[i]);o.l.push(q.low[i]??raw[i]);o.c.push(raw[i]);o.v.push(q.volume[i]??0);}}
+  for(let i=0;i<raw.length;i++)if(raw[i]!=null&&!isNaN(raw[i])){o.ts.push(ts[i]);o.o.push(q.open[i]??raw[i]);o.h.push(q.high[i]??raw[i]);o.l.push(q.low[i]??raw[i]);o.c.push(raw[i]);o.v.push(q.volume[i]??0);}
   return o;
 }
 async function fetchFund(t){
-  try{const d=await cget(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail,defaultKeyStatistics,financialData`);const r=d.quoteSummary?.result?.[0];if(!r)return{};return{eps:r.defaultKeyStatistics?.trailingEps?.raw??null,pe:r.summaryDetail?.trailingPE?.raw??null,pb:r.summaryDetail?.priceToBook?.raw??null,rev:r.financialData?.revenueGrowth?.raw??0};}catch{return{};}
+  try{
+    const d=await cget(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail,defaultKeyStatistics,financialData,earnings`);
+    const r=d.quoteSummary?.result?.[0];if(!r)return{};
+    const eq=r.earnings?.earningsChart?.quarterly||[];
+    return{eps:r.defaultKeyStatistics?.trailingEps?.raw??null,pe:r.summaryDetail?.trailingPE?.raw??null,pb:r.summaryDetail?.priceToBook?.raw??null,rev:r.financialData?.revenueGrowth?.raw??0,roe:r.financialData?.returnOnEquity?.raw??null,debtEq:r.financialData?.debtToEquity?.raw??null,grossMargin:r.financialData?.grossMargins?.raw??null,quarterly:eq};
+  }catch{return{};}
 }
 async function fetchYNews(t){
   try{const d=await cget(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(t)}&newsCount=6&quotesCount=0`);return(d.news||[]).map((n,i)=>`${i+1}. ${n.title}\n   ${n.summary||''}`).join('\n');}catch{return'';}
 }
 async function fetchSerper(t,name,key){
   const tw=t.includes('.TW')||t.includes('.TWO');
-  const q=tw?`${name} ${t} 股價 新聞 法說會 外資`:`${t} ${name} stock news earnings`;
+  const q=tw?`${name} ${t} 股價 新聞 法說會 外資`:`${t} ${name} stock news earnings analyst`;
   const r=await fetch('https://google.serper.dev/search',{method:'POST',headers:{'X-API-KEY':key,'Content-Type':'application/json'},body:JSON.stringify({q,gl:tw?'tw':'us',hl:tw?'zh-tw':'en',num:6,tbs:'qdr:w'})});
   if(!r.ok)throw new Error('Serper '+r.status);
   return((await r.json()).organic||[]).map((x,i)=>`${i+1}. ${x.title}\n   ${x.snippet||''}`).join('\n');
 }
 
-/* ─── INDICATORS ─── */
+/* ─ INDICATORS ─ */
 function sma(a,p){const n=a.length,r=new Array(n).fill(null);if(n<p)return r;let s=0;for(let i=0;i<p;i++)s+=a[i];r[p-1]=s/p;for(let i=p;i<n;i++){s+=a[i]-a[i-p];r[i]=s/p;}return r;}
 function ema(a,sp){const k=2/(sp+1),r=new Array(a.length);r[0]=a[0];for(let i=1;i<a.length;i++)r[i]=a[i]*k+r[i-1]*(1-k);return r;}
 function calcRsi(c){const n=c.length,r=new Array(n).fill(null);const a=1/14;let ag=0,al=0;for(let i=1;i<n;i++){const d=c[i]-c[i-1],g=Math.max(d,0),l=Math.max(-d,0);ag=i===1?g:g*a+ag*(1-a);al=i===1?l:l*a+al*(1-a);r[i]=al===0?100:100-100/(1+ag/al);}return r;}
 function calcMh(c){const e12=ema(c,12),e26=ema(c,26),m=e12.map((v,i)=>v-e26[i]),s=ema(m,9);return m.map((v,i)=>v-s[i]);}
 function buildInd(raw){return{...raw,s20:sma(raw.c,20),s60:sma(raw.c,60),s240:sma(raw.c,240),s1200:sma(raw.c,1200),s4800:sma(raw.c,4800),rsi:calcRsi(raw.c),mh:calcMh(raw.c),vs5:sma(raw.v,5)};}
 
-/* ─── SCORING ─── */
+/* ─ SCORING ─ */
 function score(d,i,f,tpe,isUS){
   if(i<6)return{sc:0,sig:'⚪ 觀望',why:''};
   const{o,c,v,s240,rsi,mh,vs5}=d;let sc=0,wy=[];
@@ -938,9 +553,9 @@ function gemCheck(d,i,f){
   return{isGem:false,r:''};
 }
 
-/* ─── MAIN RUN ─── */
+/* ─ MAIN ANALYSIS ─ */
 async function runAnalysis(){
-  if(ST.busy)return;ST.busy=true;
+  if(ST.busy)return;ST.busy=true;closeDetail();
   const tks=$('tks-inp').value.split(',').map(t=>t.trim().toUpperCase()).filter(Boolean);
   const tpe=+$('pe-range').value;
   const btn=$('run-btn');btn.disabled=true;btn.textContent='⏳ 分析中...';
@@ -968,26 +583,24 @@ async function runAnalysis(){
     }catch(e){console.warn('Skip',t,e.message);}
     if(idx<tks.length-1)await sleep(120);
   }
-  ST.res=res;
-  $('prog-wrap').style.display='none';
+  ST.res=res;$('prog-wrap').style.display='none';
   renderAll(res);fillChartSel(res);
-  const t=`共 ${res.length} 支 | ${new Date().toLocaleTimeString()}`;
-  $('nav-st').textContent=t;$('nav-st2').textContent=t;
+  const ts=`共 ${res.length} 支 | ${new Date().toLocaleTimeString()}`;$('nav-st').textContent=ts;
   btn.disabled=false;btn.textContent='🚀 開始分析';ST.busy=false;
 }
 
-/* ─── RENDER ─── */
+/* ─ RENDER ─ */
 function sCls(v){return v.includes('買進')||v.includes('偏多')?'s-b':v.includes('賣出')||v.includes('偏空')?'s-s':'s-n';}
 function pCls(v){return v.includes('買進')||v.includes('偏多')?'pill pill-b':v.includes('賣出')||v.includes('偏空')?'pill pill-s':'pill pill-n';}
 
 function mkTable(rows,sg){
-  if(!rows.length)return'<div class="empty-state"><div class="es-icon">🔎</div><p class="es-title">目前無符合條件的股票</p></div>';
+  if(!rows.length)return'<div class="empty"><div class="es-ico">🔎</div><p class="es-ttl">目前無符合條件的股票</p></div>';
   const gh=sg?'<th>低估狀態</th>':'',gd=r=>sg?`<td class="c-gm">${r.gemR}</td>`:'';
-  return`<div class="tbl-outer"><table class="dt"><thead><tr><th>代號</th><th>名稱</th><th>現價</th><th>漲跌幅</th><th>今日訊號</th>${gh}<th>昨日</th><th>前日</th><th>策略理由</th><th>T-2驗證</th><th>合理估值</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td class="c-tk">${r.ticker}</td><td class="c-nm">${r.name}</td><td class="c-nu">${r.price.toFixed(2)}</td><td class="${r.chg>=0?'c-up':'c-dn'}">${r.chg>=0?'+':''}${(r.chg*100).toFixed(2)}%</td><td class="${sCls(r.sig0)}">${r.sig0}</td>${gd(r)}<td class="${sCls(r.sig1)}">${r.sig1}</td><td class="${sCls(r.sig2)}">${r.sig2}</td><td class="c-why">${r.why||'—'}</td><td class="s-v">${r.val}</td><td class="c-nu">${r.fair}</td><td><button class="btn-ai" onclick="qAI('${r.ticker}')">🔍 AI</button></td></tr>`).join('')}</tbody></table></div>`;
+  return`<div class="tbl-out"><table class="dt"><thead><tr><th>代號</th><th>名稱</th><th>現價</th><th>漲跌</th><th>今日訊號</th>${gh}<th>策略理由</th><th>T-2驗證</th><th>合理估值</th><th>評分</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr onclick="openDetail('${r.ticker}')"><td class="c-tk">${r.ticker}</td><td class="c-nm">${r.name}</td><td class="c-nu">${r.price.toFixed(2)}</td><td class="${r.chg>=0?'c-up':'c-dn'}">${r.chg>=0?'+':''}${(r.chg*100).toFixed(2)}%</td><td class="${sCls(r.sig0)}">${r.sig0}</td>${gd(r)}<td class="c-wy">${r.why||'—'}</td><td class="s-v">${r.val}</td><td class="c-nu">${r.fair}</td><td class="c-nu">${r.score.toFixed(1)}</td><td><button class="btn-detail" onclick="event.stopPropagation();openDetail('${r.ticker}')">📋 詳情</button></td></tr>`).join('')}</tbody></table></div>`;
 }
 function mkCards(rows,sg){
-  if(!rows.length)return'<div class="empty-state"><div class="es-icon">🔎</div><p class="es-title">目前無符合條件的股票</p></div>';
-  return`<div class="card-list">${rows.map(r=>`<div class="scard"><div class="sc-top"><div class="sc-l"><div class="tk">${r.ticker}</div><div class="nm">${r.name}</div></div><div class="sc-r"><div class="pr">${r.price.toFixed(2)}</div><div class="ch ${r.chg>=0?'c-up':'c-dn'}">${r.chg>=0?'+':''}${(r.chg*100).toFixed(2)}%</div></div></div><div class="pills"><span class="${pCls(r.sig0)}">${r.sig0}</span>${sg&&r.gemR?`<span class="pill pill-g">${r.gemR}</span>`:''}<span class="pill pill-n" style="font-size:12px">${r.val}</span></div>${r.why?`<div class="sc-why">📝 ${r.why}</div>`:''}<div class="sc-foot"><span class="sc-meta">估值 ${r.fair} · 評分 ${r.score.toFixed(1)}</span><button class="btn-ai" onclick="qAI('${r.ticker}')">🔍 AI 分析</button></div></div>`).join('')}</div>`;
+  if(!rows.length)return'<div class="empty"><div class="es-ico">🔎</div><p class="es-ttl">目前無符合條件的股票</p></div>';
+  return`<div class="card-list">${rows.map(r=>`<div class="scard" onclick="openDetail('${r.ticker}')"><div class="sc-top"><div class="sc-l"><div class="tk">${r.ticker}</div><div class="nm">${r.name}</div></div><div class="sc-r"><div class="pr">${r.price.toFixed(2)}</div><div class="ch ${r.chg>=0?'c-up':'c-dn'}">${r.chg>=0?'+':''}${(r.chg*100).toFixed(2)}%</div></div></div><div class="pills"><span class="${pCls(r.sig0)}">${r.sig0}</span>${sg&&r.gemR?`<span class="pill pill-g">${r.gemR}</span>`:''}<span class="pill pill-n" style="font-size:12px">${r.val}</span></div>${r.why?`<div class="sc-why">📝 ${r.why}</div>`:''}<div class="sc-foot"><span class="sc-meta">估值 ${r.fair} · 評分 ${r.score.toFixed(1)}</span><span style="font-size:12px;color:var(--brand);font-weight:600">📋 點擊查看詳情 →</span></div></div>`).join('')}</div>`;
 }
 function sec(id,rows,sg){$(id).innerHTML=isMob()?mkCards(rows,sg):mkTable(rows,sg);}
 function renderAll(res){
@@ -1002,37 +615,129 @@ function renderAll(res){
 }
 window.addEventListener('resize',()=>{if(ST.res.length)renderAll(ST.res);});
 
-/* ─── CHART ─── */
-function fillChartSel(res){$('chart-sel').innerHTML='<option value="">— 從分析結果選擇 —</option>'+res.map(r=>`<option value="${r.ticker}">${r.name} (${r.ticker})</option>`).join('');}
-async function drawChart(t){
-  const box=$('chart-box');box.innerHTML='<div class="loading"><div class="spin"></div> 載入圖表資料...</div>';
+/* ─ STOCK DETAIL PANEL ─ */
+async function openDetail(ticker){
+  const row=ST.res.find(r=>r.ticker===ticker);
+  if(!row)return;
+  ST.curTicker=ticker;
+
+  // Show panel, hide table
+  document.querySelectorAll('.spane').forEach(p=>p.style.display='none');
+  const dp=$('detail-panel');dp.style.display='block';
+  dp.scrollIntoView({behavior:'smooth',block:'start'});
+
+  // Header
+  $('dp-ticker').textContent=ticker;
+  $('dp-name').textContent=row.name;
+  $('dp-price').textContent=row.price.toFixed(2);
+  const chgEl=$('dp-chg');chgEl.textContent=(row.chg>=0?'+':'')+(row.chg*100).toFixed(2)+'%';
+  chgEl.className='dp-chg '+(row.chg>=0?'up':'dn');
+  $('dp-sig').textContent=row.sig0;
+
+  // Metrics strip
+  const f=row.fund||{};
+  const fmtPct=v=>v!=null?`${(v*100).toFixed(1)}%`:'—';
+  const fmtNum=v=>v!=null?v.toFixed(2):'—';
+  $('dp-metrics').innerHTML=[
+    ['PE 本益比',f.pe!=null?f.pe.toFixed(1)+'x':'—'],
+    ['PB 股價淨值',f.pb!=null?f.pb.toFixed(2)+'x':'—'],
+    ['EPS',f.eps!=null?f.eps.toFixed(2):'—'],
+    ['營收成長',fmtPct(f.rev)],
+    ['毛利率',fmtPct(f.grossMargin)],
+    ['ROE',fmtPct(f.roe)],
+    ['合理估值',`$${row.fair}`],
+    ['評分',`${row.score.toFixed(1)} 分`],
+  ].map(([l,v])=>`<div class="dp-m"><span class="dp-mv">${v}</span><span class="dp-ml">${l}</span></div>`).join('');
+
+  // Fund table
+  const revCls=f.rev>0?'fv-up':f.rev<0?'fv-dn':'fv-neu';
+  $('dp-fund-table').innerHTML=[
+    ['今日訊號',`<span class="${sCls(row.sig0)}">${row.sig0}</span>`],
+    ['昨日訊號',`<span class="${sCls(row.sig1)}">${row.sig1}</span>`],
+    ['前日訊號',`<span class="${sCls(row.sig2)}">${row.sig2}</span>`],
+    ['T-2 驗證',`<span class="s-v">${row.val}</span>`],
+    ['策略理由',row.why||'—'],
+    ['負債/淨值',f.debtEq!=null?`<span class="${f.debtEq>2?'fv-dn':'fv-up'}">${f.debtEq.toFixed(1)}%</span>`:'—'],
+  ].map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+
+  // K-line chart
+  $('dp-kchart').innerHTML='<div class="ld"><div class="spin"></div>載入 K 線圖...</div>';
+  renderDpKChart(ticker);
+
+  // EPS quarterly chart
+  $('dp-eps-chart').innerHTML='<div class="ld"><div class="spin"></div>載入 EPS 數據...</div>';
+  renderEpsChart(ticker,f.quarterly||[]);
+
+  // Reset AI
+  $('dp-ai-result').innerHTML='';
+  const aiBtn=$('dp-ai-btn');
+  aiBtn.disabled=false;aiBtn.textContent='🧠 AI 新聞深度分析';
+  aiBtn.onclick=()=>runDpAI(ticker);
+}
+
+function closeDetail(){
+  $('detail-panel').style.display='none';
+  document.querySelectorAll('.spane').forEach(p=>{
+    p.style.display=p.classList.contains('on')?'block':'none';
+  });
+  ST.curTicker=null;
+}
+
+async function renderDpKChart(ticker){
   try{
-    let d=ST.cache[t.toUpperCase()];if(!d){const raw=await fetchHist(t);d=buildInd(raw);}
-    const n=d.c.length,disp=Math.min(n,750),st=n-disp;
+    let d=ST.cache[ticker.toUpperCase()];
+    if(!d){const raw=await fetchHist(ticker);d=buildInd(raw);}
+    const n=d.c.length,disp=Math.min(n,500),st=n-disp;
     const toD=ts=>new Date(ts*1000).toISOString().split('T')[0];
     const dates=d.ts.slice(st).map(toD);
     const ln=(vals,col,w,dash,name)=>({type:'scatter',mode:'lines',x:dates,y:vals.slice(st),line:{color:col,width:w,dash:dash||'solid'},name,connectgaps:false});
-    Plotly.newPlot('chart-box',[
+    Plotly.newPlot('dp-kchart',[
       {type:'candlestick',x:dates,open:d.o.slice(st),high:d.h.slice(st),low:d.l.slice(st),close:d.c.slice(st),name:'K線',
        increasing:{line:{color:'#16a34a'},fillcolor:'rgba(22,163,74,.75)'},
        decreasing:{line:{color:'#dc2626'},fillcolor:'rgba(220,38,38,.75)'}},
-      ln(d.s60,'#0d9488',1.5,'solid','季線 60'),
-      ln(d.s240,'#d4821a',2,'solid','年線 240'),
+      ln(d.s60,'#0d9488',1.5,'solid','季線60'),
+      ln(d.s240,'#c97d18',2,'solid','年線240'),
       ln(d.s1200,'#f59e0b',2,'dot','5年線'),
-      ln(d.s4800,'#dc2626',3,'dash','🔥 20年線'),
-    ],[{
-      paper_bgcolor:'#fff',plot_bgcolor:'#faf8f5',
-      font:{color:'#4a3e34',family:"'JetBrains Mono',monospace",size:11},
-      title:{text:`${getName(t)} (${t})`,font:{size:16,color:'#1a1410',family:"'Noto Sans TC',sans-serif"}},
-      xaxis:{rangeslider:{visible:false},gridcolor:'#e2dbd2',linecolor:'#e2dbd2',color:'#8a7868'},
-      yaxis:{gridcolor:'#e2dbd2',linecolor:'#e2dbd2',color:'#8a7868'},
-      legend:{bgcolor:'rgba(255,255,255,.8)',font:{size:11}},
-      margin:{t:48,b:42,l:64,r:18},height:460,
-    }][0],{responsive:true,displayModeBar:true});
-  }catch(e){box.innerHTML=`<div class="empty-state"><div class="es-icon">⚠️</div><p class="es-title">無法載入：${e.message}</p></div>`;}
+      ln(d.s4800,'#dc2626',3,'dash','20年線'),
+    ],[{paper_bgcolor:'#fff',plot_bgcolor:'#faf8f4',font:{color:'#4a3c2c',family:"'JetBrains Mono',monospace",size:10},xaxis:{rangeslider:{visible:false},gridcolor:'#e4ddd3',linecolor:'#e4ddd3',color:'#8a7860'},yaxis:{gridcolor:'#e4ddd3',linecolor:'#e4ddd3',color:'#8a7860'},legend:{bgcolor:'rgba(255,255,255,.8)',font:{size:10}},margin:{t:14,b:36,l:58,r:10},height:320}][0],{responsive:true,displayModeBar:false});
+  }catch(e){$('dp-kchart').innerHTML=`<div class="empty"><div class="es-ico">⚠️</div><p class="es-ttl">${e.message}</p></div>`;}
 }
 
-/* ─── AI NEWS ─── */
+function renderEpsChart(ticker,quarterly){
+  if(!quarterly||quarterly.length===0){
+    $('dp-eps-chart').innerHTML='<div style="padding:20px;text-align:center;color:var(--tx4);font-size:13px">季度 EPS 數據不足</div>';return;
+  }
+  const q=[...quarterly].slice(-8).reverse();
+  const labels=q.map(x=>x.date||'');
+  const actual=q.map(x=>x.actual?.raw??null);
+  const estimate=q.map(x=>x.estimate?.raw??null);
+  const colors=actual.map(v=>v>=0?'rgba(22,163,74,.7)':'rgba(220,38,38,.7)');
+  Plotly.newPlot('dp-eps-chart',[
+    {type:'bar',x:labels,y:actual,name:'實際 EPS',marker:{color:colors}},
+    {type:'scatter',mode:'lines+markers',x:labels,y:estimate,name:'預估 EPS',line:{color:'#c97d18',width:2,dash:'dot'},marker:{size:6}},
+  ],[{paper_bgcolor:'#fff',plot_bgcolor:'#faf8f4',font:{color:'#4a3c2c',size:10,family:"'JetBrains Mono',monospace"},xaxis:{gridcolor:'#e4ddd3',linecolor:'#e4ddd3',color:'#8a7860'},yaxis:{gridcolor:'#e4ddd3',linecolor:'#e4ddd3',color:'#8a7860',zeroline:true,zerolinecolor:'#cfc7b8'},legend:{bgcolor:'rgba(255,255,255,.8)',font:{size:10}},margin:{t:10,b:36,l:50,r:10},height:200,showlegend:true}][0],{responsive:true,displayModeBar:false});
+}
+
+/* ─ GEMINI AI (fixed model list) ─ */
+async function callGemini(key,prompt){
+  // Updated model list — try newest first, include fallbacks
+  const models=['gemini-2.0-flash','gemini-2.0-flash-001','gemini-2.0-flash-lite','gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro','gemini-1.5-pro-latest','gemini-pro'];
+  let lastErr='';
+  for(const m of models){
+    try{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+      if(r.status===404){lastErr=`模型 ${m} 不存在`;continue;}
+      if(r.status===403){const e=await r.json().catch(()=>({}));throw new Error('API Key 無效或無權限：'+( e.error?.message||'403 Forbidden'));}
+      if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${r.status}`);}
+      return(await r.json()).candidates[0].content.parts[0].text;
+    }catch(e){
+      if(e.message.includes('403')||e.message.includes('Key')||e.message.includes('permission'))throw e;
+      lastErr=e.message;
+    }
+  }
+  throw new Error(`所有 Gemini 模型均無回應。請確認：\n1. API Key 是否正確（右上角 ⚙️）\n2. Key 是否已開啟 Generative Language API\n3. 目前使用的 Key：${key.slice(0,8)}...`);
+}
+
 function md2h(t){
   const e=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const lines=e(t).split('\n');const out=[];let ul=false;
@@ -1044,76 +749,105 @@ function md2h(t){
     else{if(ul){out.push('</ul>');ul=false;}out.push(`<p>${L.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')}</p>`);}}
   if(ul)out.push('</ul>');return out.join('\n');
 }
-async function callGemini(key,prompt){
-  for(const m of['gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-pro']){
-    try{
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
-      if(r.status===404)continue;if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${r.status}`);}
-      return(await r.json()).candidates[0].content.parts[0].text;
-    }catch(e){if(e.message?.includes('404'))continue;throw e;}
-  }
-  throw new Error('找不到可用 Gemini 模型，請確認 API Key');
-}
-async function runNews(t){
+
+async function runDpAI(ticker){
   const gk=getKey('gk'),sk=getKey('sk');
   if(!gk){alert('請先點右上角 ⚙️ 填入 Gemini API Key');return;}
-  const name=getName(t),nr=$('news-result');
-  nr.innerHTML='<div class="loading"><div class="spin"></div> 搜尋最新新聞中...</div>';
+  const name=getName(ticker);
+  const btn=$('dp-ai-btn');btn.disabled=true;btn.textContent='⏳ AI 分析中...';
+  const res=$('dp-ai-result');res.innerHTML='<div class="ld"><div class="spin"></div>搜尋最新新聞中...</div>';
   let news='',badge='';
-  if(sk){try{news=await fetchSerper(t,name,sk);badge='<span class="src-tag src-s">Serper</span>';}catch(e){console.warn(e.message);}}
-  if(!news){news=await fetchYNews(t);badge='<span class="src-tag src-y">Yahoo News</span>';}
+  if(sk){try{news=await fetchSerper(ticker,name,sk);badge='<span class="src-tag src-s">Serper</span>';}catch(e){console.warn('Serper:',e.message);}}
+  if(!news){news=await fetchYNews(ticker);badge='<span class="src-tag src-y">Yahoo News</span>';}
   if(!news)news='（無法取得近期新聞，請參考技術面評分）';
-  nr.innerHTML='<div class="loading"><div class="spin"></div> Gemini AI 深度分析中...</div>';
+  res.innerHTML='<div class="ld"><div class="spin"></div>Gemini AI 深度分析中...</div>';
   try{
-    const row=ST.res.find(r=>r.ticker===t);
-    const si=row?`\n【技術面評分快照】\n- 評分：${row.score.toFixed(1)}\n- 訊號：${row.sig0}\n- 理由：${row.why}\n- 合理估值：${row.fair}`:'';
-    const prompt=`你是一位華爾街資深操盤手兼基本面分析師。請根據以下資料對「${name} (${t})」撰寫投資分析報告。\n${si}\n【最新市場資訊】\n${news}\n\n請以**繁體中文**撰寫：\n\n## 🔥 市場焦點\n條列最近 1-2 週關鍵事件\n\n## ⚖️ 多空分析\n**✅ 利多理由**（2-3點）\n**🔻 風險隱憂**（2-3點）\n\n## 🎯 投資建議\n明確操作建議，說明買點區間或停損考量。`;
+    const row=ST.res.find(r=>r.ticker===ticker);
+    const si=row?`\n【技術面評分快照】\n- 評分：${row.score.toFixed(1)} 分\n- 今日訊號：${row.sig0}\n- 策略理由：${row.why}\n- 合理估值：${row.fair}\n- 本益比：${row.fund?.pe?.toFixed(1)||'—'}x\n- EPS：${row.fund?.eps?.toFixed(2)||'—'}`:'';
+    const prompt=`你是一位華爾街資深操盤手兼基本面分析師。請根據以下資料，對「${name} (${ticker})」撰寫完整投資分析報告。\n${si}\n\n【最新市場資訊】\n${news}\n\n請以**繁體中文**撰寫，格式如下：\n\n## 🔥 市場焦點\n條列最近 1-2 週的關鍵事件（法說會、外資動向、產業消息、財報表現）\n\n## ⚖️ 多空分析\n**✅ 利多理由**（2-3 點）\n**🔻 風險隱憂**（2-3 點）\n\n## 🎯 投資建議\n明確操作建議（強力買進 / 分批佈局 / 觀望 / 減碼 / 賣出），說明買點區間與停損位。\n\n若資訊不足請誠實說明，勿虛構數據。`;
     const report=await callGemini(gk,prompt);
-    const smr=row?`<div class="score-strip"><div class="sm-cell"><span class="sm-v">${row.score.toFixed(1)}</span><span class="sm-l">評分</span></div><div class="sm-cell"><span class="sm-v" style="font-size:13px">${row.sig0}</span><span class="sm-l">今日訊號</span></div><div class="sm-cell"><span class="sm-v">$${row.price.toFixed(2)}</span><span class="sm-l">現價</span></div><div class="sm-cell"><span class="sm-v">$${row.fair}</span><span class="sm-l">合理估值</span></div></div>`:'';
-    nr.innerHTML=`<div class="a-card"><div class="a-hdr"><span class="a-chip">${t}</span><span class="a-name">${name}</span>${badge}</div><div class="a-body">${md2h(report)}</div>${smr}</div><details class="raw-news"><summary>📋 查看原始新聞資料</summary><pre>${news}</pre></details>`;
-  }catch(e){nr.innerHTML=`<div class="empty-state" style="background:#fff;border:1px solid var(--border);border-radius:var(--r)"><div class="es-icon">⚠️</div><p class="es-title">分析失敗：${e.message}</p></div>`;}
-}
-function qAI(t){
-  $('news-inp').value=t;
-  switchTab('news');
-  runNews(t);
+    res.innerHTML=`<div class="a-card"><div class="a-hdr"><span style="font-size:14px;font-weight:700;color:var(--tx1)">${name} (${ticker})</span>${badge}</div><div class="a-body">${md2h(report)}</div></div><details class="raw-news"><summary>📋 查看原始新聞資料</summary><pre>${news}</pre></details>`;
+  }catch(e){
+    res.innerHTML=`<div class="empty" style="background:var(--rbg);border:1px solid var(--rbdr);border-radius:var(--r)"><div class="es-ico">⚠️</div><p class="es-ttl" style="color:var(--red)">分析失敗</p><p class="es-hint" style="white-space:pre-line">${e.message}</p></div>`;
+  }
+  btn.disabled=false;btn.textContent='🔄 重新分析';
 }
 
-/* ─── TAB SWITCHING ─── */
+/* ─ NEWS TAB ─ */
+async function runNewsTab(ticker){
+  const gk=getKey('gk'),sk=getKey('sk');
+  if(!gk){alert('請先點右上角 ⚙️ 填入 Gemini API Key');return;}
+  const name=getName(ticker),nr=$('news-result');
+  nr.innerHTML='<div class="ld"><div class="spin"></div>搜尋最新新聞中...</div>';
+  let news='',badge='';
+  if(sk){try{news=await fetchSerper(ticker,name,sk);badge='<span class="src-tag src-s">Serper</span>';}catch(e){console.warn(e.message);}}
+  if(!news){news=await fetchYNews(ticker);badge='<span class="src-tag src-y">Yahoo News</span>';}
+  if(!news)news='（無法取得近期新聞）';
+  nr.innerHTML='<div class="ld"><div class="spin"></div>Gemini AI 分析中...</div>';
+  try{
+    const row=ST.res.find(r=>r.ticker===ticker);
+    const si=row?`\n【技術面】評分${row.score.toFixed(1)} | ${row.sig0} | 估值${row.fair}`:'';
+    const prompt=`你是華爾街資深操盤手。根據以下資料分析「${name} (${ticker})」。${si}\n\n【新聞】\n${news}\n\n請用**繁體中文**撰寫：\n\n## 🔥 市場焦點\n## ⚖️ 多空分析\n## 🎯 投資建議`;
+    const report=await callGemini(gk,prompt);
+    nr.innerHTML=`<div class="a-card"><div class="a-hdr"><span class="a-chip" style="font-family:var(--fm);font-size:13px;color:var(--teal)">${ticker}</span><span style="font-size:17px;font-weight:700">${name}</span>${badge}</div><div class="a-body">${md2h(report)}</div></div><details class="raw-news"><summary>📋 查看原始新聞資料</summary><pre>${news}</pre></details>`;
+  }catch(e){nr.innerHTML=`<div class="empty" style="background:var(--rbg);border:1px solid var(--rbdr);border-radius:var(--r)"><div class="es-ico">⚠️</div><p class="es-ttl" style="color:var(--red)">分析失敗</p><p class="es-hint" style="white-space:pre-line">${e.message}</p></div>`;}
+}
+
+/* ─ MAIN CHART TAB ─ */
+function fillChartSel(res){$('chart-sel').innerHTML='<option value="">— 從分析結果選擇 —</option>'+res.map(r=>`<option value="${r.ticker}">${r.name} (${r.ticker})</option>`).join('');}
+async function drawMainChart(t){
+  const box=$('chart-box');box.innerHTML='<div class="ld"><div class="spin"></div>載入圖表...</div>';
+  try{
+    let d=ST.cache[t.toUpperCase()];if(!d){const raw=await fetchHist(t);d=buildInd(raw);}
+    const n=d.c.length,disp=Math.min(n,750),st=n-disp;
+    const toD=ts=>new Date(ts*1000).toISOString().split('T')[0];
+    const dates=d.ts.slice(st).map(toD);
+    const ln=(vals,col,w,dash,name)=>({type:'scatter',mode:'lines',x:dates,y:vals.slice(st),line:{color:col,width:w,dash:dash||'solid'},name,connectgaps:false});
+    Plotly.newPlot('chart-box',[
+      {type:'candlestick',x:dates,open:d.o.slice(st),high:d.h.slice(st),low:d.l.slice(st),close:d.c.slice(st),name:'K線',increasing:{line:{color:'#16a34a'},fillcolor:'rgba(22,163,74,.75)'},decreasing:{line:{color:'#dc2626'},fillcolor:'rgba(220,38,38,.75)'}},
+      ln(d.s60,'#0d9488',1.5,'solid','季線60'),ln(d.s240,'#c97d18',2,'solid','年線240'),ln(d.s1200,'#f59e0b',2,'dot','5年線'),ln(d.s4800,'#dc2626',3,'dash','20年線'),
+    ],[{paper_bgcolor:'#fff',plot_bgcolor:'#faf8f4',font:{color:'#4a3c2c',family:"'JetBrains Mono',monospace",size:11},title:{text:`${getName(t)} (${t})`,font:{size:16,color:'#18120a',family:"'Noto Sans TC',sans-serif"}},xaxis:{rangeslider:{visible:false},gridcolor:'#e4ddd3',linecolor:'#e4ddd3',color:'#8a7860'},yaxis:{gridcolor:'#e4ddd3',linecolor:'#e4ddd3',color:'#8a7860'},legend:{bgcolor:'rgba(255,255,255,.8)',font:{size:11}},margin:{t:48,b:42,l:64,r:18},height:460}][0],{responsive:true,displayModeBar:true});
+  }catch(e){box.innerHTML=`<div class="empty"><div class="es-ico">⚠️</div><p class="es-ttl">${e.message}</p></div>`;}
+}
+
+/* ─ UI NAVIGATION ─ */
 function switchTab(name){
-  document.querySelectorAll('.hn-tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
+  document.querySelectorAll('.hn,.dn').forEach(b=>{const k=b.dataset.tab||b.dataset.dtab;b.classList.toggle('on',k===name);});
   document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='pane-'+name));
-  document.querySelectorAll('.dn-btn').forEach(b=>b.classList.toggle('on',b.dataset.dtab===name));
   closeMob();
 }
 
-/* ─── SETTINGS PANEL ─── */
-let settingsOpen=false;
-function toggleSettings(){
-  settingsOpen=!settingsOpen;
-  $('settings-panel').classList.toggle('on',settingsOpen);
-  $('settings-btn').classList.toggle('on',settingsOpen);
-  document.addEventListener('click',outsideSettings,{once:true,capture:true});
-}
-function outsideSettings(e){
-  if(!$('settings-panel').contains(e.target)&&e.target!==$('settings-btn')){
-    settingsOpen=false;
-    $('settings-panel').classList.remove('on');
-    $('settings-btn').classList.remove('on');
-  } else if(settingsOpen){
-    document.addEventListener('click',outsideSettings,{once:true,capture:true});
+/* Settings panel */
+let cfgOpen=false;
+function toggleCfg(){
+  cfgOpen=!cfgOpen;
+  $('cfg-panel').classList.toggle('on',cfgOpen);
+  $('cfg-btn').classList.toggle('on',cfgOpen);
+  if(cfgOpen){
+    setTimeout(()=>document.addEventListener('click',function h(e){
+      if(!$('cfg-panel').contains(e.target)&&e.target!==$('cfg-btn')){cfgOpen=false;$('cfg-panel').classList.remove('on');$('cfg-btn').classList.remove('on');}
+      else if(cfgOpen)document.addEventListener('click',h,{once:true,capture:true});
+    },{once:true,capture:true}),100);
   }
 }
+function openMob(){$('drawer').classList.add('on');}
+function closeMob(){$('drawer').classList.remove('on');}
 
-/* ─── MOBILE DRAWER ─── */
-function openMob(){$('mob-drawer').classList.add('on');}
-function closeMob(){$('mob-drawer').classList.remove('on');}
+/* Sub tabs */
+function bindSubTabs(){
+  document.querySelectorAll('.st').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.st').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.spane').forEach(x=>{x.classList.remove('on');x.style.display='none';});
+    b.classList.add('on');
+    const sp=$('sub-'+b.dataset.sub);sp.classList.add('on');sp.style.display='block';
+    closeDetail();
+  }));
+}
 
-/* ─── INIT ─── */
+/* ─ INIT ─ */
 function init(){
   syncKeys();bindKeys();bindEyes();
 
-  // Preset groups
   const gs=$('grp-sel');
   gs.innerHTML=Object.keys(PRESETS).map(k=>`<option value="${k}">${k}</option>`).join('');
   gs.addEventListener('change',()=>{const p=PRESETS[gs.value];$('tks-inp').value=p.c;$('pe-range').value=p.p;$('pe-val').textContent=p.p;});
@@ -1123,33 +857,22 @@ function init(){
   $('pe-range').addEventListener('input',e=>$('pe-val').textContent=e.target.value);
   $('run-btn').addEventListener('click',runAnalysis);
 
-  // Nav tabs (desktop)
-  document.querySelectorAll('.hn-tab').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
-  // Drawer nav (mobile)
-  document.querySelectorAll('.dn-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.dtab)));
+  document.querySelectorAll('.hn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+  document.querySelectorAll('.dn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.dtab)));
+  bindSubTabs();
 
-  // Sub tabs
-  document.querySelectorAll('.st').forEach(b=>b.addEventListener('click',()=>{
-    document.querySelectorAll('.st').forEach(x=>x.classList.remove('on'));
-    document.querySelectorAll('.sub-pane').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');$('sub-'+b.dataset.sub).classList.add('on');
-  }));
+  $('cfg-btn').addEventListener('click',e=>{e.stopPropagation();toggleCfg();});
+  $('dp-back-btn').addEventListener('click',closeDetail);
 
-  // Settings panel
-  $('settings-btn').addEventListener('click',e=>{e.stopPropagation();toggleSettings();});
+  $('chart-btn').addEventListener('click',()=>{const t=($('chart-inp').value||$('chart-sel').value).trim().toUpperCase();if(t)drawMainChart(t);});
+  $('chart-sel').addEventListener('change',()=>{const t=$('chart-sel').value;if(t){$('chart-inp').value='';drawMainChart(t);}});
 
-  // Chart
-  $('chart-btn').addEventListener('click',()=>{const t=($('chart-inp').value||$('chart-sel').value).trim().toUpperCase();if(t)drawChart(t);});
-  $('chart-sel').addEventListener('change',()=>{const t=$('chart-sel').value;if(t){$('chart-inp').value='';drawChart(t);}});
+  $('news-btn').addEventListener('click',()=>{const t=$('news-inp').value.trim().toUpperCase();if(t)runNewsTab(t);});
+  $('news-inp').addEventListener('keydown',e=>{if(e.key==='Enter'){const t=$('news-inp').value.trim().toUpperCase();if(t)runNewsTab(t);}});
 
-  // News
-  $('news-btn').addEventListener('click',()=>{const t=$('news-inp').value.trim().toUpperCase();if(t)runNews(t);});
-  $('news-inp').addEventListener('keydown',e=>{if(e.key==='Enter'){const t=$('news-inp').value.trim().toUpperCase();if(t)runNews(t);}});
-
-  // Mobile hamburger & drawer
   $('hbg-btn').addEventListener('click',openMob);
-  $('drawer-close').addEventListener('click',closeMob);
-  $('drawer-ov').addEventListener('click',closeMob);
+  $('d-x').addEventListener('click',closeMob);
+  $('dov').addEventListener('click',closeMob);
 }
 
 init();
