@@ -524,40 +524,78 @@ async function fetchHistFull(t){
 async function fetchHist(t){return fetchHistFull(t);}
 async function fetchFund(t){
   let base={eps:null,pe:null,pb:null,rev:0,roe:null,debtEq:null,grossMargin:null,quarterly:[]};
-  // ── Endpoint A: v7/quote (fastest, most reliable across CORS) ──
+
+  // ── Strategy: try 3 URL patterns, pick first that returns useful data ──
+  const urls=[
+    // v11 (newest Yahoo endpoint, often bypasses CORS)
+    `https://query1.finance.yahoo.com/v11/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail%2CdefaultKeyStatistics%2CfinancialData%2Cearnings`,
+    // v10 on query2
+    `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail%2CdefaultKeyStatistics%2CfinancialData%2Cearnings`,
+    // v10 on query1
+    `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail%2CdefaultKeyStatistics%2CfinancialData%2Cearnings`,
+  ];
+
+  for(const url of urls){
+    try{
+      // Try direct (no proxy) first — sometimes works in browser
+      let d=null;
+      try{
+        const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
+        if(r.ok) d=await r.json();
+      }catch{}
+      // If direct failed, try via corsproxy
+      if(!d){
+        try{
+          const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`,{signal:AbortSignal.timeout(8000)});
+          if(r.ok) d=JSON.parse(await r.text());
+        }catch{}
+      }
+      if(!d) continue;
+
+      const result=d.quoteSummary?.result?.[0];
+      if(!result) continue;
+
+      const sd=result.summaryDetail||{};
+      const ks=result.defaultKeyStatistics||{};
+      const fd=result.financialData||{};
+      const eq=result.earnings?.earningsChart?.quarterly||[];
+
+      const g=v=>v?.raw??null;
+
+      // PE: try multiple locations
+      const pe=g(sd.trailingPE)||g(ks.forwardPE)||null;
+      const eps=g(ks.trailingEps)||null;
+      const pb=g(sd.priceToBook)||null;
+      const rev=g(fd.revenueGrowth)??0;
+      const roe=g(fd.returnOnEquity)||null;
+      const debtEq=g(fd.debtToEquity)||null;
+      const gm=g(fd.grossMargins)||null;
+
+      // Accept if we got at least one meaningful metric
+      if(pe||eps||pb||roe||gm){
+        return{eps,pe,pb,rev,roe,debtEq,grossMargin:gm,quarterly:eq};
+      }
+      // Even if no ratios, still return what we have (may have quarterly)
+      base={eps,pe,pb,rev,roe,debtEq,grossMargin:gm,quarterly:eq};
+    }catch(e){console.log('fetchFund attempt failed:',e.message);}
+  }
+
+  // Last resort: v7/quote for basic price-derived metrics
   try{
-    const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}&fields=trailingPE,priceToBook,epsTrailingTwelveMonths,revenueGrowth,returnOnEquity,debtToEquity,grossMargins`;
-    const d=await cget(url);
-    const r=d.quoteResponse?.result?.[0];
+    const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}`;
+    let d=null;
+    try{const r=await fetch(url,{signal:AbortSignal.timeout(5000)});if(r.ok)d=await r.json();}catch{}
+    if(!d){const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`,{signal:AbortSignal.timeout(8000)});if(r.ok)d=JSON.parse(await r.text());}
+    const r=d?.quoteResponse?.result?.[0];
     if(r){
-      base.eps=r.epsTrailingTwelveMonths??null;
-      base.pe=r.trailingPE??null;
-      base.pb=r.priceToBook??null;
-      base.rev=r.revenueGrowth??0;
-      base.roe=r.returnOnEquity??null;
-      base.debtEq=r.debtToEquity??null;
-      base.grossMargin=r.grossMargins??null;
+      if(base.eps==null) base.eps=r.epsTrailingTwelveMonths??null;
+      if(base.pe==null)  base.pe=r.trailingPE??null;
+      if(base.pb==null)  base.pb=r.priceToBook??null;
+      if(!base.rev)      base.rev=r.revenueGrowth??0;
+      if(base.grossMargin==null) base.grossMargin=r.grossMargins??null;
     }
-  }catch(e){console.log('v7/quote failed:',e.message);}
-  // ── Endpoint B: quoteSummary with modules (for quarterly EPS + overrides) ──
-  try{
-    const url=`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail,defaultKeyStatistics,financialData,earnings`;
-    const d=await cget(url);
-    const r=d.quoteSummary?.result?.[0];
-    if(r){
-      const ks=r.defaultKeyStatistics||{}, fd=r.financialData||{}, sd=r.summaryDetail||{};
-      // Only override if value exists
-      if(ks.trailingEps?.raw!=null)    base.eps=ks.trailingEps.raw;
-      if(sd.trailingPE?.raw!=null)     base.pe=sd.trailingPE.raw;
-      else if(ks.forwardPE?.raw!=null && base.pe==null) base.pe=ks.forwardPE.raw;
-      if(sd.priceToBook?.raw!=null)    base.pb=sd.priceToBook.raw;
-      if(fd.revenueGrowth?.raw!=null)  base.rev=fd.revenueGrowth.raw;
-      if(fd.returnOnEquity?.raw!=null) base.roe=fd.returnOnEquity.raw;
-      if(fd.debtToEquity?.raw!=null)   base.debtEq=fd.debtToEquity.raw;
-      if(fd.grossMargins?.raw!=null)   base.grossMargin=fd.grossMargins.raw;
-      base.quarterly=r.earnings?.earningsChart?.quarterly||[];
-    }
-  }catch(e){console.log('quoteSummary failed:',e.message);}
+  }catch{}
+
   return base;
 }
 async function fetchYNews(t){
@@ -779,10 +817,18 @@ function closeDetail(){
 async function renderDpKChart(ticker){
   try{
     let d=ST.cache[ticker.toUpperCase()];
-    if(!d){
-      $('dp-kchart').innerHTML='<div class="ld"><div class="spin"></div>載入完整 K 線圖（25年）...</div>';
-      const raw=await fetchHistFull(ticker);d=buildInd(raw);
-      ST.cache[ticker]=d; // upgrade cache
+    // Always upgrade to full history for detail view (short cache = ~400 days only)
+    const needUpgrade=!d||(d.c&&d.c.length<1000);
+    if(needUpgrade){
+      $('dp-kchart').innerHTML='<div class="ld"><div class="spin"></div>載入完整 K 線圖（含5年/20年線）...</div>';
+      try{
+        const raw=await fetchHistFull(ticker);
+        d=buildInd(raw);
+        ST.cache[ticker.toUpperCase()]=d;  // upgrade cache with full data
+      }catch(e){
+        // If full fetch fails, use whatever we have
+        if(!d) throw e;
+      }
     }
     const n=d.c.length,disp=Math.min(n,500),st=n-disp;
     const toD=ts=>new Date(ts*1000).toISOString().split('T')[0];
