@@ -362,7 +362,7 @@ table.dt td{padding:10px 14px;vertical-align:middle}
       <div class="dp-body">
         <div class="dp-chart-col">
           <div class="dp-section-title">📈 K 線圖（含長線均線）</div>
-          <div id="dp-kchart"><div class="ld"><div class="spin"></div>載入中...</div></div>
+          <div id="dp-kchart"></div>
         </div>
         <div class="dp-fund-col">
           <div>
@@ -371,7 +371,7 @@ table.dt td{padding:10px 14px;vertical-align:middle}
           </div>
           <div>
             <div class="dp-section-title">📉 季度 EPS 趨勢</div>
-            <div id="dp-eps-chart"><div class="ld"><div class="spin"></div>載入中...</div></div>
+            <div id="dp-eps-chart"></div>
           </div>
         </div>
       </div>
@@ -498,12 +498,42 @@ async function fetchHist(t){
   return o;
 }
 async function fetchFund(t){
+  // Try two endpoints; v7/quote is faster and more CORS-friendly
+  let base={};
+  // Endpoint A: v7/finance/quote (primary — quick, basic metrics)
   try{
-    const d=await cget(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail,defaultKeyStatistics,financialData,earnings`);
-    const r=d.quoteSummary?.result?.[0];if(!r)return{};
-    const eq=r.earnings?.earningsChart?.quarterly||[];
-    return{eps:r.defaultKeyStatistics?.trailingEps?.raw??null,pe:r.summaryDetail?.trailingPE?.raw??null,pb:r.summaryDetail?.priceToBook?.raw??null,rev:r.financialData?.revenueGrowth?.raw??0,roe:r.financialData?.returnOnEquity?.raw??null,debtEq:r.financialData?.debtToEquity?.raw??null,grossMargin:r.financialData?.grossMargins?.raw??null,quarterly:eq};
-  }catch{return{};}
+    const d=await cget(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}`);
+    const r=d.quoteResponse?.result?.[0];
+    if(r){
+      base={
+        eps:    r.epsTrailingTwelveMonths??null,
+        pe:     r.trailingPE??null,
+        pb:     r.priceToBook??null,
+        rev:    r.revenueGrowth??0,
+        roe:    r.returnOnEquity??null,
+        debtEq: r.debtToEquity??null,
+        grossMargin: r.grossMargins??null,
+        quarterly:[],
+      };
+    }
+  }catch{}
+  // Endpoint B: quoteSummary (secondary — for earnings quarterly, may fail on TW stocks)
+  try{
+    const d=await cget(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=defaultKeyStatistics,financialData,earnings`);
+    const r=d.quoteSummary?.result?.[0];
+    if(r){
+      // Override with quoteSummary values if available (more accurate)
+      if(r.defaultKeyStatistics?.trailingEps?.raw!=null) base.eps=r.defaultKeyStatistics.trailingEps.raw;
+      if(r.defaultKeyStatistics?.trailingPE?.raw!=null)  base.pe=r.defaultKeyStatistics.trailingPE?.raw??base.pe;
+      // trailingPE is in summaryDetail not defaultKeyStatistics, but financialData has it too
+      if(r.financialData?.revenueGrowth?.raw!=null) base.rev=r.financialData.revenueGrowth.raw;
+      if(r.financialData?.returnOnEquity?.raw!=null) base.roe=r.financialData.returnOnEquity.raw;
+      if(r.financialData?.debtToEquity?.raw!=null)  base.debtEq=r.financialData.debtToEquity.raw;
+      if(r.financialData?.grossMargins?.raw!=null)  base.grossMargin=r.financialData.grossMargins.raw;
+      base.quarterly=r.earnings?.earningsChart?.quarterly||[];
+    }
+  }catch{}
+  return base;
 }
 async function fetchYNews(t){
   try{const d=await cget(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(t)}&newsCount=6&quotesCount=0`);return(d.news||[]).map((n,i)=>`${i+1}. ${n.title}\n   ${n.summary||''}`).join('\n');}catch{return'';}
@@ -583,7 +613,7 @@ async function runAnalysis(){
   $('prog-wrap').style.display='flex';
   ST.res=[];ST.cache={};const res=[];
   // Process in batches of 3 for speed
-  const BATCH=3;
+  const BATCH=5;
   let done=0;
   for(let i=0;i<tks.length;i+=BATCH){
     const batch=tks.slice(i,i+BATCH);
@@ -593,7 +623,7 @@ async function runAnalysis(){
     done+=batch.length;
     $('prog-fill').style.width=Math.round(done/tks.length*100)+'%';
     // Small pause between batches to avoid rate limiting
-    if(i+BATCH<tks.length)await sleep(200);
+    if(i+BATCH<tks.length)await sleep(80);
   }
   ST.res=res;$('prog-wrap').style.display='none';
   renderAll(res);fillChartSel(res);
@@ -688,6 +718,10 @@ async function openDetail(ticker){
     aiBtn.disabled=false;aiBtn.textContent='🧠 AI 新聞深度分析';
     aiBtn.onclick=()=>runDpAI(ticker);
 
+    // Show loading state for metrics while we fetch fresh fund data
+    if(!row.fund||Object.keys(row.fund).length===0){
+      $('dp-eps-chart').innerHTML='<div class="ld"><div class="spin"></div>載入基本面數據...</div>';
+    }
     // Fetch fresh fund data in background and update UI when ready
     fetchFund(ticker).then(f=>{
       if(!f||ST.curTicker!==ticker)return;
@@ -701,7 +735,12 @@ async function openDetail(ticker){
       }
       renderMetrics(merged,row);
       renderEpsChart(ticker,merged.quarterly||[]);
-    }).catch(()=>{});
+    }).catch(()=>{
+      // Even on failure, clear the loading state
+      if(ST.curTicker===ticker){
+        renderEpsChart(ticker,[]);
+      }
+    });
 
   }finally{_detailOpening=false;}
 }
@@ -738,8 +777,10 @@ async function renderDpKChart(ticker){
 }
 
 function renderEpsChart(ticker,quarterly){
+  const el=$('dp-eps-chart');
+  if(!el)return;
   if(!quarterly||quarterly.length===0){
-    $('dp-eps-chart').innerHTML='<div style="padding:20px;text-align:center;color:var(--tx4);font-size:13px">季度 EPS 數據不足</div>';return;
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--tx4);font-size:13px">季度 EPS 數據不足</div>';return;
   }
   const q=[...quarterly].slice(-8).reverse();
   const labels=q.map(x=>x.date||'');
