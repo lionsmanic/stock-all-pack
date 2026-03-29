@@ -480,59 +480,84 @@ function bindEyes(){
   }));
 }
 
-/* ─ CORS FETCH ─ */
+/* ─ CORS FETCH — direct first, then proxy fallbacks ─ */
 async function cget(url){
-  for(const px of[u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`]){
-    try{const r=await fetch(px(url),{signal:AbortSignal.timeout(25000)});if(!r.ok)continue;return JSON.parse(await r.text());}catch{}
-  }throw new Error('Fetch failed');
+  // 1. Try direct (no proxy overhead — works when Yahoo allows cross-origin)
+  try{
+    const r=await fetch(url,{signal:AbortSignal.timeout(6000),headers:{'Accept':'application/json'}});
+    if(r.ok)return JSON.parse(await r.text());
+  }catch{}
+  // 2. corsproxy.io
+  try{
+    const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`,{signal:AbortSignal.timeout(10000)});
+    if(r.ok)return JSON.parse(await r.text());
+  }catch{}
+  // 3. allorigins fallback
+  try{
+    const r=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,{signal:AbortSignal.timeout(10000)});
+    if(r.ok)return JSON.parse(await r.text());
+  }catch{}
+  throw new Error('Fetch failed');
 }
 
 /* ─ YAHOO ─ */
-async function fetchHist(t){
-  const p2=Math.floor(Date.now()/1000),p1=p2-25*365*24*3600;
-  const d=await cget(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?interval=1d&period1=${p1}&period2=${p2}`);
+function _parseChart(d){
   const res=d.chart?.result?.[0];if(!res)throw new Error('No data');
   const ts=res.timestamp,q=res.indicators.quote[0],ac=res.indicators.adjclose?.[0]?.adjclose,raw=ac||q.close;
   const o={ts:[],o:[],h:[],l:[],c:[],v:[]};
   for(let i=0;i<raw.length;i++)if(raw[i]!=null&&!isNaN(raw[i])){o.ts.push(ts[i]);o.o.push(q.open[i]??raw[i]);o.h.push(q.high[i]??raw[i]);o.l.push(q.low[i]??raw[i]);o.c.push(raw[i]);o.v.push(q.volume[i]??0);}
   return o;
 }
+// Short: ~400 days — enough for sma240 + scoring, very fast download
+async function fetchHistShort(t){
+  const p2=Math.floor(Date.now()/1000),p1=p2-400*86400;
+  const d=await cget(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?interval=1d&period1=${p1}&period2=${p2}`);
+  return _parseChart(d);
+}
+// Full: 25 years — for detail panel with 5yr/20yr lines
+async function fetchHistFull(t){
+  const p2=Math.floor(Date.now()/1000),p1=p2-25*365*86400;
+  const d=await cget(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?interval=1d&period1=${p1}&period2=${p2}`);
+  return _parseChart(d);
+}
+// Legacy alias used by main chart tab
+async function fetchHist(t){return fetchHistFull(t);}
 async function fetchFund(t){
-  // Try two endpoints; v7/quote is faster and more CORS-friendly
-  let base={};
-  // Endpoint A: v7/finance/quote (primary — quick, basic metrics)
+  let base={eps:null,pe:null,pb:null,rev:0,roe:null,debtEq:null,grossMargin:null,quarterly:[]};
+  // ── Endpoint A: v7/quote (fastest, most reliable across CORS) ──
   try{
-    const d=await cget(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}`);
+    const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}&fields=trailingPE,priceToBook,epsTrailingTwelveMonths,revenueGrowth,returnOnEquity,debtToEquity,grossMargins`;
+    const d=await cget(url);
     const r=d.quoteResponse?.result?.[0];
     if(r){
-      base={
-        eps:    r.epsTrailingTwelveMonths??null,
-        pe:     r.trailingPE??null,
-        pb:     r.priceToBook??null,
-        rev:    r.revenueGrowth??0,
-        roe:    r.returnOnEquity??null,
-        debtEq: r.debtToEquity??null,
-        grossMargin: r.grossMargins??null,
-        quarterly:[],
-      };
+      base.eps=r.epsTrailingTwelveMonths??null;
+      base.pe=r.trailingPE??null;
+      base.pb=r.priceToBook??null;
+      base.rev=r.revenueGrowth??0;
+      base.roe=r.returnOnEquity??null;
+      base.debtEq=r.debtToEquity??null;
+      base.grossMargin=r.grossMargins??null;
     }
-  }catch{}
-  // Endpoint B: quoteSummary (secondary — for earnings quarterly, may fail on TW stocks)
+  }catch(e){console.log('v7/quote failed:',e.message);}
+  // ── Endpoint B: quoteSummary with modules (for quarterly EPS + overrides) ──
   try{
-    const d=await cget(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=defaultKeyStatistics,financialData,earnings`);
+    const url=`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=summaryDetail,defaultKeyStatistics,financialData,earnings`;
+    const d=await cget(url);
     const r=d.quoteSummary?.result?.[0];
     if(r){
-      // Override with quoteSummary values if available (more accurate)
-      if(r.defaultKeyStatistics?.trailingEps?.raw!=null) base.eps=r.defaultKeyStatistics.trailingEps.raw;
-      if(r.defaultKeyStatistics?.trailingPE?.raw!=null)  base.pe=r.defaultKeyStatistics.trailingPE?.raw??base.pe;
-      // trailingPE is in summaryDetail not defaultKeyStatistics, but financialData has it too
-      if(r.financialData?.revenueGrowth?.raw!=null) base.rev=r.financialData.revenueGrowth.raw;
-      if(r.financialData?.returnOnEquity?.raw!=null) base.roe=r.financialData.returnOnEquity.raw;
-      if(r.financialData?.debtToEquity?.raw!=null)  base.debtEq=r.financialData.debtToEquity.raw;
-      if(r.financialData?.grossMargins?.raw!=null)  base.grossMargin=r.financialData.grossMargins.raw;
+      const ks=r.defaultKeyStatistics||{}, fd=r.financialData||{}, sd=r.summaryDetail||{};
+      // Only override if value exists
+      if(ks.trailingEps?.raw!=null)    base.eps=ks.trailingEps.raw;
+      if(sd.trailingPE?.raw!=null)     base.pe=sd.trailingPE.raw;
+      else if(ks.forwardPE?.raw!=null && base.pe==null) base.pe=ks.forwardPE.raw;
+      if(sd.priceToBook?.raw!=null)    base.pb=sd.priceToBook.raw;
+      if(fd.revenueGrowth?.raw!=null)  base.rev=fd.revenueGrowth.raw;
+      if(fd.returnOnEquity?.raw!=null) base.roe=fd.returnOnEquity.raw;
+      if(fd.debtToEquity?.raw!=null)   base.debtEq=fd.debtToEquity.raw;
+      if(fd.grossMargins?.raw!=null)   base.grossMargin=fd.grossMargins.raw;
       base.quarterly=r.earnings?.earningsChart?.quarterly||[];
     }
-  }catch{}
+  }catch(e){console.log('quoteSummary failed:',e.message);}
   return base;
 }
 async function fetchYNews(t){
@@ -587,7 +612,7 @@ function gemCheck(d,i,f){
 async function analyseOne(t,tpe){
   // Returns a result object or null
   try{
-    const raw=await fetchHist(t);
+    const raw=await fetchHistShort(t);
     if(!raw||raw.c.length<250)return null;
     const d=buildInd(raw);ST.cache[t]=d;
     // Fetch fund in parallel but don't block if it fails
@@ -612,19 +637,17 @@ async function runAnalysis(){
   const btn=$('run-btn');btn.disabled=true;btn.textContent='⏳ 分析中...';
   $('prog-wrap').style.display='flex';
   ST.res=[];ST.cache={};const res=[];
-  // Process in batches of 3 for speed
-  const BATCH=5;
+  // Fire ALL requests simultaneously — browser limits concurrency naturally (~6)
+  $('prog-lbl').textContent=`同時分析 ${tks.length} 支...`;
   let done=0;
-  for(let i=0;i<tks.length;i+=BATCH){
-    const batch=tks.slice(i,i+BATCH);
-    $('prog-lbl').textContent=`分析 ${i+1}–${Math.min(i+BATCH,tks.length)} / ${tks.length}`;
-    const batchRes=await Promise.all(batch.map(t=>analyseOne(t,tpe)));
-    batchRes.forEach(r=>{if(r)res.push(r);});
-    done+=batch.length;
+  const allPromises=tks.map(t=>analyseOne(t,tpe).then(r=>{
+    done++;
     $('prog-fill').style.width=Math.round(done/tks.length*100)+'%';
-    // Small pause between batches to avoid rate limiting
-    if(i+BATCH<tks.length)await sleep(80);
-  }
+    $('prog-lbl').textContent=`已完成 ${done} / ${tks.length}`;
+    return r;
+  }));
+  const allRes=await Promise.all(allPromises);
+  allRes.forEach(r=>{if(r)res.push(r);});
   ST.res=res;$('prog-wrap').style.display='none';
   renderAll(res);fillChartSel(res);
   const ts=`共 ${res.length} 支 | ${new Date().toLocaleTimeString()}`;$('nav-st').textContent=ts;
@@ -757,8 +780,9 @@ async function renderDpKChart(ticker){
   try{
     let d=ST.cache[ticker.toUpperCase()];
     if(!d){
-      $('dp-kchart').innerHTML='<div class="ld"><div class="spin"></div>載入 K 線圖...</div>';
-      const raw=await fetchHist(ticker);d=buildInd(raw);
+      $('dp-kchart').innerHTML='<div class="ld"><div class="spin"></div>載入完整 K 線圖（25年）...</div>';
+      const raw=await fetchHistFull(ticker);d=buildInd(raw);
+      ST.cache[ticker]=d; // upgrade cache
     }
     const n=d.c.length,disp=Math.min(n,500),st=n-disp;
     const toD=ts=>new Date(ts*1000).toISOString().split('T')[0];
