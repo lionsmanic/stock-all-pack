@@ -100,9 +100,9 @@ body{font-family:var(--ff);background:var(--bg);color:var(--tx1);font-size:15px;
 .spane.on{display:block}
 
 /* Table */
-.tbl-out{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl-out{overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 200px)}
 table.dt{width:100%;border-collapse:collapse;font-size:14px;min-width:840px}
-table.dt thead tr{background:var(--bg3);border-bottom:2px solid var(--bdr);position:sticky;top:108px;z-index:10}
+table.dt thead tr{background:var(--bg3);border-bottom:2px solid var(--bdr);position:sticky;top:0;z-index:5}
 table.dt th{padding:10px 14px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);white-space:nowrap;background:var(--bg3)}
 table.dt tbody tr{border-bottom:1px solid var(--bg4);transition:background .12s;cursor:pointer}
 table.dt tbody tr:last-child{border-bottom:none}
@@ -721,7 +721,7 @@ function renderEpsChart(ticker,quarterly){
 /* ─ GEMINI AI (fixed model list) ─ */
 async function callGemini(key,prompt){
   // Updated model list — try newest first, include fallbacks
-  const models=['gemini-2.0-flash','gemini-2.0-flash-001','gemini-2.0-flash-lite','gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro','gemini-1.5-pro-latest','gemini-pro'];
+  const models=['gemini-2.5-flash-preview-04-17','gemini-2.5-flash','gemini-2.0-flash','gemini-2.0-flash-001','gemini-2.0-flash-lite','gemini-1.5-flash','gemini-1.5-flash-latest','gemini-1.5-pro'];
   let lastErr='';
   for(const m of models){
     try{
