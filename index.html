@@ -568,98 +568,100 @@ async function fetchHistFull(t){
 // Legacy alias used by main chart tab
 async function fetchHist(t){return fetchHistFull(t);}
 async function fetchFund(t){
-  const isTW  = t.includes('.TW') || t.includes('.TWO');
-  const isOTC = t.includes('.TWO');
+  const isTW = t.includes('.TW') || t.includes('.TWO');
   const code  = t.replace('.TW','').replace('.TWO','');
 
-  /* ── TAIWAN STOCKS ─────────────────────────────
-     Source: TWSE / TPEX official open API (CORS ✓)
-     Data cached globally — lookup is instant
-  ─────────────────────────────────────────────── */
+  /* ══════════════════════════════════════════════════
+     TAIWAN STOCKS
+     Strategy:
+       1. TWSE/TPEX global cache → PE, PB, DividendYield  (CORS ✓, instant)
+       2. Yahoo Finance v7/quote with .TW suffix → EPS, ROE, GrossMargin, RevGrowth
+          (often works direct; if not, via corsproxy)
+       3. Fallback: EPS = Price / PE
+  ══════════════════════════════════════════════════ */
   if(isTW){
-    // Ensure cache is loaded (no-op if already done)
     await ensureFundCache();
+    let pe=null, pb=null, yld=null, eps=null, roe=null, gm=null, rev=0, debtEq=null;
 
-    let pe=null, pb=null, yld=null;
-
-    // Search TWSE (上市) then TPEX (上櫃)
-    const twseItem = GFC.twse.find(s=>s.Code===code);
-    const tpexItem = GFC.tpex.find(s=>
-      s.SecuritiesCompanyCode===code ||
-      s['SecuritiesCompanyCode']===code
+    // ── Step 1: TWSE/TPEX cache (PE, PB, Yield) ──
+    const twseItem = GFC.twse.find(s => s.Code === code);
+    const tpexItem = GFC.tpex.find(s =>
+      s.SecuritiesCompanyCode === code || s.Code === code
     );
     const item = twseItem || tpexItem;
-
     if(item){
-      pe  = parseFloat(item.PEratio  || item.PERatio  || 0) || null;
-      pb  = parseFloat(item.PBratio  || item.PBRatio  || 0) || null;
-      yld = parseFloat(item.DividendYield || item.DividendYield || 0) || null;
+      const peParse = parseFloat(item.PEratio || item.PERatio || '');
+      const pbParse = parseFloat(item.PBratio || item.PBRatio || '');
+      const yldParse = parseFloat(item.DividendYield || '');
+      if(peParse > 0)  pe  = peParse;
+      if(pbParse > 0)  pb  = pbParse;
+      if(yldParse > 0) yld = yldParse;
     }
 
-    // EPS: try TWSE opendata (最新年度財報)
-    let eps = null;
-    try{
-      const epsUrl='https://openapi.twse.com.tw/v1/opendata/t187ap03_L';
-      const r=await fetch(epsUrl,{signal:AbortSignal.timeout(8000)});
-      if(r.ok){
-        const arr=await r.json();
-        const row=arr.find(s=>s['公司代號']===code||s.Code===code);
-        if(row){
-          const raw=row['基本每股盈餘（元）']||row['EPS']||row['每股盈餘（元）']||null;
-          if(raw) eps=parseFloat(raw)||null;
-        }
-      }
-    }catch{}
+    // ── Step 2: Yahoo Finance v7/quote for EPS + other metrics ──
+    const yf7 = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}&fields=epsTrailingTwelveMonths,revenueGrowth,returnOnEquity,debtToEquity,grossMargins,trailingPE,priceToBook`;
+    for(const url of [yf7, `https://corsproxy.io/?${encodeURIComponent(yf7)}`, `https://api.allorigins.win/raw?url=${encodeURIComponent(yf7)}`]){
+      try{
+        const r = await fetch(url, {signal:AbortSignal.timeout(6000)});
+        if(!r.ok) continue;
+        const d = JSON.parse(await r.text());
+        const q = d?.quoteResponse?.result?.[0];
+        if(!q) continue;
+        if(q.epsTrailingTwelveMonths != null) eps = q.epsTrailingTwelveMonths;
+        if(q.returnOnEquity != null) roe = q.returnOnEquity;
+        if(q.grossMargins != null)   gm  = q.grossMargins;
+        if(q.revenueGrowth != null)  rev = q.revenueGrowth;
+        if(q.debtToEquity != null)   debtEq = q.debtToEquity;
+        // Fill in PE/PB from Yahoo if TWSE cache missed
+        if(pe == null && q.trailingPE != null) pe = q.trailingPE;
+        if(pb == null && q.priceToBook != null) pb = q.priceToBook;
+        if(eps != null) break;  // success
+      }catch{}
+    }
 
-    return {eps, pe, pb, rev:0, roe:null, debtEq:null, grossMargin:null, quarterly:[], dividendYield:yld};
+    return {eps, pe, pb, rev, roe, debtEq, grossMargin:gm, quarterly:[], dividendYield:yld};
   }
 
-  /* ── US STOCKS ──────────────────────────────────
-     Yahoo Finance v7/quote — often allows direct
-     cross-origin from browsers (no proxy needed)
-  ─────────────────────────────────────────────── */
-  let base={eps:null,pe:null,pb:null,rev:0,roe:null,debtEq:null,grossMargin:null,quarterly:[]};
+  /* ══════════════════════════════════════════════════
+     US STOCKS — Yahoo Finance v7/quote + quoteSummary
+  ══════════════════════════════════════════════════ */
+  let base = {eps:null, pe:null, pb:null, rev:0, roe:null, debtEq:null, grossMargin:null, quarterly:[]};
 
-  // Try 3 approaches in order
-  const yf7 = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}`;
-  const proxies = [
-    yf7,                                                             // direct (no proxy)
-    `https://corsproxy.io/?${encodeURIComponent(yf7)}`,             // corsproxy
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(yf7)}`,// allorigins
-  ];
-
-  for(const url of proxies){
+  const yf7us = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}&fields=trailingPE,priceToBook,epsTrailingTwelveMonths,revenueGrowth,returnOnEquity,debtToEquity,grossMargins`;
+  for(const url of [yf7us, `https://corsproxy.io/?${encodeURIComponent(yf7us)}`, `https://api.allorigins.win/raw?url=${encodeURIComponent(yf7us)}`]){
     try{
-      const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+      const r = await fetch(url, {signal:AbortSignal.timeout(8000)});
       if(!r.ok) continue;
-      const d=JSON.parse(await r.text());
-      const row=d?.quoteResponse?.result?.[0];
-      if(!row) continue;
-      base.eps = row.epsTrailingTwelveMonths ?? null;
-      base.pe  = row.trailingPE ?? null;
-      base.pb  = row.priceToBook ?? null;
-      base.rev = row.revenueGrowth ?? 0;
-      base.roe = row.returnOnEquity ?? null;
-      base.debtEq = row.debtToEquity ?? null;
-      base.grossMargin = row.grossMargins ?? null;
-      if(base.pe || base.eps) break;  // got meaningful data, stop
+      const d = JSON.parse(await r.text());
+      const q = d?.quoteResponse?.result?.[0];
+      if(!q) continue;
+      base.eps = q.epsTrailingTwelveMonths ?? null;
+      base.pe  = q.trailingPE ?? null;
+      base.pb  = q.priceToBook ?? null;
+      base.rev = q.revenueGrowth ?? 0;
+      base.roe = q.returnOnEquity ?? null;
+      base.debtEq = q.debtToEquity ?? null;
+      base.grossMargin = q.grossMargins ?? null;
+      if(base.pe || base.eps) break;
     }catch{}
   }
 
-  // Quarterly EPS via quoteSummary (for chart) — best effort
-  const qsUrl=`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=earnings`;
+  // Quarterly EPS
+  const qsUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(t)}?modules=earnings`;
   for(const url of [qsUrl, `https://corsproxy.io/?${encodeURIComponent(qsUrl)}`]){
     try{
-      const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+      const r = await fetch(url, {signal:AbortSignal.timeout(6000)});
       if(!r.ok) continue;
-      const d=JSON.parse(await r.text());
-      base.quarterly=d?.quoteSummary?.result?.[0]?.earnings?.earningsChart?.quarterly||[];
+      const d = JSON.parse(await r.text());
+      base.quarterly = d?.quoteSummary?.result?.[0]?.earnings?.earningsChart?.quarterly || [];
       if(base.quarterly.length) break;
     }catch{}
   }
 
   return base;
 }
+
+
 /* ═══ LIVE QUOTE (real-time / 15-min delayed) ═══ */
 async function fetchLiveQuote(t){
   const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,regularMarketTime,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketVolume,fiftyDayAverage,twoHundredDayAverage,marketState`;
@@ -754,24 +756,117 @@ function buildInd(raw){return{...raw,s20:sma(raw.c,20),s60:sma(raw.c,60),s240:sm
 
 /* ─ SCORING ─ */
 function score(d,i,f,tpe,isUS){
-  if(i<6)return{sc:0,sig:'⚪ 觀望',why:''};
-  const{o,c,v,s240,rsi,mh,vs5}=d;let sc=0,wy=[];
-  const{eps=null,pe=null,pb=null,rev=0}=f||{};
-  if(eps!==null){if(eps<0)sc-=3;else{const up=(eps*tpe-c[i])/c[i];if(up>0.2){wy.push('股價低估');sc+=2;}else if(up<-0.2)sc-=1.5;}}
+  if(i<6)return{sc:0,sig:'⚪ 觀望',why:'',detail:[]};
+  const{o,c,v,s20,s60,s240,rsi,mh,vs5}=d;
+  let sc=0;
+  const reasons=[];  // short labels for table
+  const detail=[];   // detailed explanations for panel
+
+  const{eps=null,pe=null,pb=null,roe=null,grossMargin=null,rev=0,dividendYield=null}=f||{};
+
+  // ── 1. VALUATION ──
+  if(eps!==null){
+    if(eps<0){
+      sc-=3;
+      reasons.push('EPS虧損');
+      detail.push(`⚠️ EPS為負(${eps.toFixed(2)})，公司目前虧損`);
+    } else {
+      const fair=eps*tpe;
+      const up=(fair-c[i])/c[i];
+      if(up>0.3){reasons.push('📉嚴重低估');detail.push(`💰 股價(${c[i].toFixed(1)})遠低於合理價(${fair.toFixed(1)})，低估${(up*100).toFixed(0)}%`);sc+=3;}
+      else if(up>0.1){reasons.push('低估空間');detail.push(`📊 股價低於合理價${(up*100).toFixed(0)}%，仍有上漲空間`);sc+=1.5;}
+      else if(up<-0.3){detail.push(`📈 股價已高估${(Math.abs(up)*100).toFixed(0)}%`);sc-=2;}
+    }
+  }
   const pl=isUS?35:20;
-  if(pe){if(pe>0&&pe<pl){wy.push(`PE<${pl}`);sc+=1;}else if(pe>pl*2.5){wy.push('PE過高');sc-=1;}}
-  if(pb&&pb<1.5){wy.push('PB低');sc+=1;}
-  const rg=rev||0;if(rg>0.2){wy.push('營收飆');sc+=1;}else if(rg<-0.1)sc-=1;
-  const s=s240[i],sp=s240[i-1];
-  if(s!==null&&c[i]>s){if(sp!==null&&c[i-1]<sp){wy.push('🚀突破年線');sc+=2.5;}else sc+=1;}
-  else if(s!==null&&sp!==null&&c[i-1]>sp){wy.push('跌破年線');sc-=2;}
-  if(c[i]>o[i]&&c[i-1]>o[i-1]&&c[i-2]>o[i-2]&&c[i]>c[i-1]){wy.push('🔥連三紅');sc+=2;}
-  if(vs5[i]!==null&&v[i]>vs5[i]*1.8&&c[i]>o[i]){wy.push('💰爆量');sc+=1.5;}
-  if(mh[i-1]!==null&&mh[i-1]<0&&mh[i]>0){wy.push('MACD翻紅');sc+=1.5;}
-  if(rsi[i]!==null&&rsi[i]<30){wy.push('RSI超賣');sc+=1;}
-  if(rsi[i]!==null&&rsi[i]>75){wy.push('RSI過熱');sc-=2;}
-  let sig;if(sc>=4)sig='💎 強力買進';else if(sc>=1.5)sig='✅ 偏多';else if(sc<=-3)sig='🚨 賣出';else if(sc<=-1)sig='⚠️ 偏空';else sig='⚪ 觀望';
-  return{sc,sig,why:wy.join(', ')};
+  if(pe!=null&&pe>0){
+    if(pe<pl*0.6){reasons.push(`PE偏低(${pe.toFixed(0)}x)`);detail.push(`📊 本益比${pe.toFixed(1)}x，低於合理基準${pl}x，估值便宜`);sc+=1.5;}
+    else if(pe<pl){detail.push(`📊 本益比${pe.toFixed(1)}x，合理範圍內`);sc+=0.5;}
+    else if(pe>pl*2.5){reasons.push('PE偏高');detail.push(`⚠️ 本益比${pe.toFixed(1)}x，高於合理上限${(pl*2.5).toFixed(0)}x`);sc-=1;}
+  }
+  if(pb!=null&&pb<1.2){reasons.push(`低PB(${pb.toFixed(1)}x)`);detail.push(`📊 股價淨值比${pb.toFixed(2)}x < 1.2，資產面低估`);sc+=1;}
+  if(roe!=null&&roe>0.15){reasons.push(`ROE強(${(roe*100).toFixed(0)}%)`);detail.push(`💪 ROE ${(roe*100).toFixed(1)}%，獲利能力強`);sc+=0.5;}
+  if(grossMargin!=null&&grossMargin>0.3){detail.push(`💼 毛利率${(grossMargin*100).toFixed(1)}%，毛利結構良好`);sc+=0.3;}
+  if(dividendYield!=null&&dividendYield>0.04){reasons.push(`殖利率${(dividendYield*100).toFixed(1)}%`);detail.push(`💵 現金殖利率${(dividendYield*100).toFixed(2)}%，股息收益穩定`);sc+=0.5;}
+
+  const rg=rev||0;
+  if(rg>0.3){reasons.push('營收高成長');detail.push(`🚀 營收年增率${(rg*100).toFixed(0)}%，成長動能強勁`);sc+=1.5;}
+  else if(rg>0.1){reasons.push('營收成長');detail.push(`📈 營收年增率${(rg*100).toFixed(0)}%，穩定成長`);sc+=0.8;}
+  else if(rg<-0.15){detail.push(`📉 營收年衰退${(Math.abs(rg)*100).toFixed(0)}%`);sc-=1;}
+
+  // ── 2. TREND ──
+  const sNow=s240[i], sPrev=s240[i-1];
+  const s60Now=s60?s60[i]:null, s60Prev=s60?s60[i-1]:null;
+  if(sNow!==null){
+    const aboveYr=c[i]>sNow;
+    const crossUp=sPrev!==null&&c[i-1]<sPrev&&aboveYr;
+    const crossDn=sPrev!==null&&c[i-1]>sPrev&&!aboveYr;
+    if(crossUp){
+      reasons.push('🚀突破年線');
+      detail.push(`🚀 今日站上年線(${sNow.toFixed(1)})，多頭訊號確立`);
+      sc+=2.5;
+    } else if(aboveYr){
+      detail.push(`📈 股價(${c[i].toFixed(1)})站上年線(${sNow.toFixed(1)})，趨勢偏多`);
+      sc+=1;
+    } else if(crossDn){
+      reasons.push('跌破年線');
+      detail.push(`⚠️ 跌破年線(${sNow.toFixed(1)})，多頭趨勢終止`);
+      sc-=2.5;
+    } else {
+      detail.push(`📉 股價在年線(${sNow.toFixed(1)})下方，趨勢偏空`);
+      sc-=0.5;
+    }
+  }
+  // MA60 alignment
+  if(s60Now!==null&&sNow!==null&&c[i]>s60Now&&s60Now>sNow){
+    detail.push(`📊 季線(${s60Now.toFixed(1)})在年線上方，中期趨勢良好`);
+    sc+=0.5;
+  }
+
+  // ── 3. PRICE ACTION ──
+  const red3=c[i]>o[i]&&c[i-1]>o[i-1]&&c[i-2]>o[i-2]&&c[i]>c[i-1];
+  if(red3){reasons.push('🔥連三紅');detail.push(`🕯️ 連續3日紅K上漲，買盤持續進場`);sc+=2;}
+  // 長紅K
+  const bodyPct=(c[i]-o[i])/o[i];
+  if(bodyPct>0.03){detail.push(`📊 今日長紅K（漲幅${(bodyPct*100).toFixed(1)}%），買盤積極`);sc+=0.5;}
+  else if(bodyPct<-0.03){detail.push(`📊 今日長黑K（跌幅${(Math.abs(bodyPct)*100).toFixed(1)}%），賣壓明顯`);sc-=0.5;}
+
+  // ── 4. VOLUME ──
+  if(vs5[i]!==null){
+    const volRatio=v[i]/vs5[i];
+    if(volRatio>2.5&&c[i]>o[i]){reasons.push(`💰大量(${volRatio.toFixed(1)}x)`);detail.push(`📊 成交量爆增至均量${volRatio.toFixed(1)}倍，主力大量介入`);sc+=2;}
+    else if(volRatio>1.8&&c[i]>o[i]){reasons.push('💰量增上漲');detail.push(`📊 量增至均量${volRatio.toFixed(1)}倍，買盤有量支撐`);sc+=1.2;}
+    else if(volRatio<0.5&&c[i]<o[i]){detail.push(`📊 縮量下跌，賣壓不重`);sc+=0.3;}
+    else if(volRatio>2&&c[i]<o[i]){detail.push(`⚠️ 爆量大跌，賣壓沉重`);sc-=1.5;}
+  }
+
+  // ── 5. MACD ──
+  if(mh[i-1]!==null&&mh[i]!==null){
+    if(mh[i-1]<0&&mh[i]>0){reasons.push('MACD黃金交叉');detail.push(`📊 MACD柱狀翻正，動能由空轉多`);sc+=1.5;}
+    else if(mh[i]>0&&mh[i]>mh[i-1]){detail.push(`📊 MACD柱狀擴張，多頭動能增強`);sc+=0.5;}
+    else if(mh[i-1]>0&&mh[i]<0){reasons.push('MACD死亡交叉');detail.push(`⚠️ MACD柱狀翻負，動能由多轉空`);sc-=1.5;}
+    else if(mh[i]<0&&mh[i]<mh[i-1]){detail.push(`📉 MACD柱狀擴大偏空，空頭動能增強`);sc-=0.5;}
+  }
+
+  // ── 6. RSI ──
+  if(rsi[i]!==null){
+    const r=rsi[i];
+    if(r<25){reasons.push(`RSI超賣(${r.toFixed(0)})`);detail.push(`📊 RSI ${r.toFixed(0)}，嚴重超賣，反彈機率高`);sc+=1.5;}
+    else if(r<35){reasons.push(`RSI低位(${r.toFixed(0)})`);detail.push(`📊 RSI ${r.toFixed(0)}，超賣區間，留意反彈`);sc+=0.8;}
+    else if(r>80){reasons.push(`RSI過熱(${r.toFixed(0)})`);detail.push(`⚠️ RSI ${r.toFixed(0)}，嚴重超買，注意回調風險`);sc-=2.5;}
+    else if(r>70){reasons.push(`RSI偏熱(${r.toFixed(0)})`);detail.push(`⚠️ RSI ${r.toFixed(0)}，超買區間，謹慎追高`);sc-=1.5;}
+    else if(r>50&&r<65){detail.push(`📊 RSI ${r.toFixed(0)}，強勢整理區間`);sc+=0.3;}
+  }
+
+  let sig;
+  if(sc>=5)      sig='💎 強力買進';
+  else if(sc>=2.5)sig='✅ 偏多';
+  else if(sc<=-4) sig='🚨 強力賣出';
+  else if(sc<=-2) sig='🚨 賣出';
+  else if(sc<=-1) sig='⚠️ 偏空';
+  else            sig='⚪ 觀望';
+
+  return{sc, sig, why:reasons.slice(0,4).join(' · '), detail};
 }
 function gemCheck(d,i,f){
   const{eps=null,rev=0}=f||{};if(!eps||eps<=0)return{isGem:false,r:''};
@@ -800,7 +895,7 @@ async function analyseOne(t,tpe){
     if(r2.sig.includes('買進')||r2.sig.includes('偏多'))val=roi>0?`✅+${(roi*100).toFixed(0)}%`:`❌${(roi*100).toFixed(0)}%`;
     else if(r2.sig.includes('賣出')||r2.sig.includes('偏空'))val=roi<0?`✅${(roi*100).toFixed(0)}%`:`❌+${(roi*100).toFixed(0)}%`;
     const g=gemCheck(d,i,f);
-    return{ticker:t,name:getName(t),price:d.c[i],chg:(d.c[i]-d.c[i-1])/d.c[i-1],sig0:r0.sig,sig1:r1.sig,sig2:r2.sig,why:r0.why,val,fair:(f.eps&&f.eps>0)?(f.eps*tpe).toFixed(2):'—',score:r0.sc,isGem:g.isGem,gemR:g.r,fund:f};
+    return{ticker:t,name:getName(t),price:d.c[i],chg:(d.c[i]-d.c[i-1])/d.c[i-1],sig0:r0.sig,sig1:r1.sig,sig2:r2.sig,why:r0.why,detail:r0.detail||[],val,fair:(f.eps&&f.eps>0)?(f.eps*tpe).toFixed(2):'—',score:r0.sc,isGem:g.isGem,gemR:g.r,fund:f};
   }catch(e){console.warn('Skip',t,e.message);return null;}
 }
 
@@ -859,51 +954,56 @@ window.addEventListener('resize',()=>{if(ST.res.length)renderAll(ST.res);});
 /* ─ STOCK DETAIL PANEL ─ */
 let _detailOpening=false;
 function renderMetrics(f,row){
-  const fmtPct = v => v!=null ? `${(v*100).toFixed(1)}%` : '—';
-  const fmtNum = (v,d=2) => v!=null ? v.toFixed(d) : '—';
+  const pct  = v => v!=null ? `${(v*100).toFixed(1)}%` : '—';
+  const num  = (v,d=2) => v!=null ? Number(v).toFixed(d) : '—';
 
-  // Derive EPS from Price ÷ PE if missing
+  // Derive EPS from Price ÷ PE if still missing
   let eps = f.eps;
-  if(eps==null && f.pe && f.pe>0 && row.price>0){
-    eps = row.price / f.pe;
-  }
+  if(eps==null && f.pe && f.pe>0 && row.price>0) eps = row.price / f.pe;
 
-  // Recompute fair price now that we (may) have EPS
+  // Recompute fair price
   let fair = row.fair;
-  if(fair==='—' && eps && eps>0){
-    const tpe = +($('pe-range')?.value || 25);
+  if((fair==='—'||!fair) && eps && eps>0){
+    const tpe = +($('pe-range')?.value||25);
     fair = (eps * tpe).toFixed(2);
     row.fair = fair;
   }
 
-  // For TW stocks show Dividend Yield; for US show Gross Margin
+  // Upside / downside to fair value
+  let upsideTxt = '';
+  if(fair && fair!=='—' && row.price>0){
+    const upPct = ((parseFloat(fair)-row.price)/row.price*100).toFixed(1);
+    const cls = parseFloat(upPct)>=0 ? 'c-up' : 'c-dn';
+    upsideTxt = `<span class="${cls}" style="font-size:11px;display:block">${parseFloat(upPct)>=0?'▲':'▼'}${Math.abs(upPct)}%</span>`;
+  }
+
   const extraLabel = f.dividendYield!=null ? '殖利率' : '毛利率';
-  const extraVal   = f.dividendYield!=null ? fmtPct(f.dividendYield) : fmtPct(f.grossMargin);
+  const extraVal   = f.dividendYield!=null ? pct(f.dividendYield) : pct(f.grossMargin);
 
-  const metrics = [
-    ['PE 本益比',    f.pe!=null  ? f.pe.toFixed(1)+'x' : '—'],
-    ['PB 股價淨值',  f.pb!=null  ? f.pb.toFixed(2)+'x' : '—'],
-    ['EPS',          eps!=null   ? eps.toFixed(2) : '—'],
-    ['營收成長',     f.rev       ? fmtPct(f.rev) : '—'],
-    [extraLabel,     extraVal],
-    ['ROE',          fmtPct(f.roe)],
-    ['合理估值',     fair!=='—'  ? `$${fair}` : '—'],
-    ['評分',         `${row.score.toFixed(1)} 分`],
-  ];
+  $('dp-metrics').innerHTML = [
+    ['PE 本益比',   f.pe!=null ? f.pe.toFixed(1)+'x' : '—'],
+    ['PB 股價淨值', f.pb!=null ? f.pb.toFixed(2)+'x' : '—'],
+    ['EPS（元）',   eps!=null  ? eps.toFixed(2)       : '—'],
+    ['營收成長',    f.rev      ? pct(f.rev)            : '—'],
+    [extraLabel,    extraVal],
+    ['ROE',         pct(f.roe)],
+    ['合理估值',    fair&&fair!=='—' ? `$${fair}${upsideTxt}` : '—'],
+    ['評分',        `${row.score.toFixed(1)} 分`],
+  ].map(([l,v])=>`<div class="dp-m"><span class="dp-mv">${v}</span><span class="dp-ml">${l}</span></div>`).join('');
 
-  $('dp-metrics').innerHTML = metrics
-    .map(([l,v])=>`<div class="dp-m"><span class="dp-mv">${v}</span><span class="dp-ml">${l}</span></div>`)
-    .join('');
+  // Side table: signals + strategy detail
+  const detailRows = (row.detail||[]).map(d=>
+    `<tr><td colspan="2" style="font-size:12px;color:var(--tx2);padding:5px 8px;border-bottom:1px solid var(--bg4)">${d}</td></tr>`
+  ).join('');
 
-  // Side table (signals + fundamentals)
-  $('dp-fund-table').innerHTML=[
-    ['今日訊號', `<span class="${sCls(row.sig0)}">${row.sig0}</span>`],
-    ['昨日訊號', `<span class="${sCls(row.sig1)}">${row.sig1}</span>`],
-    ['前日訊號', `<span class="${sCls(row.sig2)}">${row.sig2}</span>`],
-    ['T-2 驗證', `<span class="s-v">${row.val}</span>`],
-    ['策略理由', row.why||'—'],
-    ['負債/淨值', f.debtEq!=null ? f.debtEq.toFixed(1)+'%' : '—'],
-  ].map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+  $('dp-fund-table').innerHTML=`
+    <tr><td>今日訊號</td><td><span class="${sCls(row.sig0)}">${row.sig0}</span></td></tr>
+    <tr><td>昨日訊號</td><td><span class="${sCls(row.sig1)}">${row.sig1}</span></td></tr>
+    <tr><td>前日訊號</td><td><span class="${sCls(row.sig2)}">${row.sig2}</span></td></tr>
+    <tr><td>T-2 驗證</td><td><span class="s-v">${row.val}</span></td></tr>
+    <tr><td>負債/淨值</td><td>${f.debtEq!=null ? f.debtEq.toFixed(1)+'%' : '—'}</td></tr>
+    ${detailRows}
+  `;
 }
 
 async function openDetail(ticker){
