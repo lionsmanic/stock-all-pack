@@ -272,6 +272,19 @@ table.dt td{padding:10px 14px;vertical-align:middle}
   table.dt{display:table}.tbl-out{display:block}
   .card-list{display:none!important}
 }
+
+/* ── LIVE QUOTE ELEMENTS ── */
+.dp-mstate{font-size:12px;font-weight:600;padding:3px 9px;border-radius:4px;margin-left:4px;vertical-align:middle}
+.ms-regular{background:#f0fdf4;color:var(--green);border:1px solid var(--gbdr)}
+.ms-pre,.ms-post{background:#fffbeb;color:#d97706;border:1px solid #fde68a}
+.ms-closed{background:var(--bg4);color:var(--tx3);border:1px solid var(--bdr)}
+#dp-intraday{display:flex;flex-wrap:wrap;gap:0;border-bottom:1px solid var(--bdr);background:var(--bg3)}
+.id-item{flex:1;min-width:75px;text-align:center;padding:9px 8px;border-right:1px solid var(--bdr)}
+.id-item:last-child{border-right:none}
+.id-v{display:block;font-family:var(--fm);font-size:14px;font-weight:600;color:var(--tx1)}
+.id-l{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-top:2px}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:4px;animation:blink-dot 1.5s ease-in-out infinite;vertical-align:middle}
+@keyframes blink-dot{0%,100%{opacity:1}50%{opacity:.25}}
 </style>
 </head>
 <body>
@@ -357,8 +370,11 @@ table.dt td{padding:10px 14px;vertical-align:middle}
         <span class="dp-price" id="dp-price"></span>
         <span class="dp-chg" id="dp-chg"></span>
         <span class="dp-sig" id="dp-sig"></span>
+        <span id="dp-market-state" class="dp-mstate"></span>
+        <span id="dp-live-label" style="font-size:11px;color:var(--tx4);margin-left:6px;font-family:var(--fm)"></span>
       </div>
       <div class="dp-metrics" id="dp-metrics"></div>
+      <div id="dp-intraday"></div>
       <div class="dp-body">
         <div class="dp-chart-col">
           <div class="dp-section-title">📈 K 線圖（含長線均線）</div>
@@ -644,6 +660,80 @@ async function fetchFund(t){
 
   return base;
 }
+/* ═══ LIVE QUOTE (real-time / 15-min delayed) ═══ */
+async function fetchLiveQuote(t){
+  const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(t)}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,regularMarketTime,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketVolume,fiftyDayAverage,twoHundredDayAverage,marketState`;
+  for(const src of[url,`https://corsproxy.io/?${encodeURIComponent(url)}`,`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`]){
+    try{
+      const r=await fetch(src,{signal:AbortSignal.timeout(7000)});
+      if(!r.ok)continue;
+      const d=JSON.parse(await r.text());
+      const q=d?.quoteResponse?.result?.[0];
+      if(!q)continue;
+      return{price:q.regularMarketPrice??null,change:q.regularMarketChange??null,changePct:q.regularMarketChangePercent??null,open:q.regularMarketOpen??null,high:q.regularMarketDayHigh??null,low:q.regularMarketDayLow??null,volume:q.regularMarketVolume??null,ma50:q.fiftyDayAverage??null,ma200:q.twoHundredDayAverage??null,marketState:q.marketState??'CLOSED',time:q.regularMarketTime?new Date(q.regularMarketTime*1000):null};
+    }catch{}
+  }
+  return null;
+}
+
+function fmtVol(v){if(!v)return'—';if(v>=1e8)return(v/1e8).toFixed(1)+'億';if(v>=1e4)return(v/1e4).toFixed(0)+'萬';return v.toLocaleString();}
+
+async function refreshLivePrice(ticker){
+  const lq=await fetchLiveQuote(ticker);
+  if(!lq||ST.curTicker!==ticker)return;
+
+  if(lq.price!=null){
+    $('dp-price').textContent=lq.price.toFixed(2);
+    const pct=lq.changePct??0;
+    const el=$('dp-chg');
+    el.textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
+    el.className='dp-chg '+(pct>=0?'up':'dn');
+    // Update result row so scoring uses live price
+    const row=ST.res.find(r=>r.ticker===ticker);
+    if(row){row.price=lq.price;row.chg=pct/100;}
+  }
+
+  // Market state badge
+  const ms=$('dp-market-state');
+  if(ms){
+    const map={REGULAR:'<span class="live-dot"></span>交易中',PRE:'🟡 盤前',POST:'🟡 盤後',CLOSED:'⚫ 收盤'};
+    ms.innerHTML=map[lq.marketState]||lq.marketState;
+    ms.className='dp-mstate ms-'+(lq.marketState||'closed').toLowerCase();
+  }
+
+  // Intraday strip
+  const id=$('dp-intraday');
+  if(id){
+    const t=lq.time?lq.time.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}):'—';
+    id.innerHTML=`
+      <div class="id-item"><span class="id-v">${lq.open?.toFixed(2)||'—'}</span><span class="id-l">今開</span></div>
+      <div class="id-item"><span class="id-v c-up">${lq.high?.toFixed(2)||'—'}</span><span class="id-l">今高</span></div>
+      <div class="id-item"><span class="id-v c-dn">${lq.low?.toFixed(2)||'—'}</span><span class="id-l">今低</span></div>
+      <div class="id-item"><span class="id-v">${fmtVol(lq.volume)}</span><span class="id-l">成交量</span></div>
+      <div class="id-item"><span class="id-v">${lq.ma50?.toFixed(1)||'—'}</span><span class="id-l">MA50</span></div>
+      <div class="id-item"><span class="id-v">${lq.ma200?.toFixed(1)||'—'}</span><span class="id-l">MA200</span></div>
+      <div class="id-item"><span class="id-v">${t}</span><span class="id-l">報價時間</span></div>
+    `;
+    // Label: US=15min delayed, TW=20min delayed
+    const lbl=$('dp-live-label');
+    if(lbl){
+      const isTW=ticker.includes('.TW')||ticker.includes('.TWO');
+      lbl.textContent=isTW?'(延遲20分鐘)':'(延遲15分鐘)';
+    }
+  }
+}
+
+let _liveTimer=null;
+function startLiveRefresh(ticker){
+  stopLiveRefresh();
+  refreshLivePrice(ticker);
+  _liveTimer=setInterval(()=>{
+    if(ST.curTicker===ticker)refreshLivePrice(ticker);
+    else stopLiveRefresh();
+  },30000);
+}
+function stopLiveRefresh(){if(_liveTimer){clearInterval(_liveTimer);_liveTimer=null;}}
+
 async function fetchYNews(t){
   try{const d=await cget(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(t)}&newsCount=6&quotesCount=0`);return(d.news||[]).map((n,i)=>`${i+1}. ${n.title}\n   ${n.summary||''}`).join('\n');}catch{return'';}
 }
@@ -853,6 +943,9 @@ async function openDetail(ticker){
     aiBtn.disabled=false;aiBtn.textContent='🧠 AI 新聞深度分析';
     aiBtn.onclick=()=>runDpAI(ticker);
 
+    // Start live price refresh (30s interval)
+    startLiveRefresh(ticker);
+
     // Show loading state for metrics while we fetch fresh fund data
     if(!row.fund||Object.keys(row.fund).length===0){
       $('dp-eps-chart').innerHTML='<div class="ld"><div class="spin"></div>載入基本面數據...</div>';
@@ -881,6 +974,7 @@ async function openDetail(ticker){
 }
 
 function closeDetail(){
+  stopLiveRefresh();
   $('detail-panel').style.display='none';
   document.querySelectorAll('.spane').forEach(p=>{
     p.style.display=p.classList.contains('on')?'block':'none';
