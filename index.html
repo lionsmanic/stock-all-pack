@@ -285,6 +285,14 @@ table.dt td{padding:10px 14px;vertical-align:middle}
 .id-l{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-top:2px}
 .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:4px;animation:blink-dot 1.5s ease-in-out infinite;vertical-align:middle}
 @keyframes blink-dot{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ── SAVE WATCHLIST ── */
+.btn-save{background:none;color:var(--brand);border:1px solid var(--brand-bdr);border-radius:var(--r2);font-family:var(--ff);font-size:13px;font-weight:600;padding:7px 13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-save:hover{background:var(--brand);color:#fff}
+.btn-save.saved{background:var(--green);color:#fff;border-color:var(--green)}
+.saved-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:4px;vertical-align:middle}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1410;color:#fff;font-family:var(--ff);font-size:14px;font-weight:600;padding:10px 22px;border-radius:24px;opacity:0;pointer-events:none;transition:all .25s;z-index:999;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -335,6 +343,8 @@ table.dt td{padding:10px 14px;vertical-align:middle}
       <span class="pe-n"><span id="pe-val">25</span>x</span>
     </div>
     <input type="text" id="tks-inp" placeholder="股票代號，逗號分隔：2330.TW, NVDA, PLTR">
+    <button class="btn-save" id="save-btn" title="儲存自選清單（含本益比設定）">💾 儲存清單</button>
+    <span id="saved-hint" style="font-size:12px;color:var(--tx3);white-space:nowrap;display:none"><span class="saved-dot"></span>已儲存</span>
     <button class="btn-run" id="run-btn">🚀 開始分析</button>
     <div id="prog-wrap">
       <div class="prog-row">
@@ -1258,6 +1268,50 @@ function bindSubTabs(){
 }
 
 /* ─ INIT ─ */
+/* ── WATCHLIST PERSISTENCE ── */
+const LS_WATCHLIST = '_custom_watchlist';
+const LS_PE        = '_custom_pe';
+
+function showToast(msg, duration=2200){
+  const t=$('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), duration);
+}
+
+function saveWatchlist(){
+  const tickers=$('tks-inp').value.trim();
+  const pe=$('pe-range').value;
+  if(!tickers){showToast('⚠️ 清單是空的，請先輸入股票代號');return;}
+  localStorage.setItem(LS_WATCHLIST, tickers);
+  localStorage.setItem(LS_PE, pe);
+  // Visual feedback
+  const btn=$('save-btn');
+  btn.classList.add('saved');
+  btn.textContent='✅ 已儲存';
+  $('saved-hint').style.display='inline';
+  setTimeout(()=>{btn.classList.remove('saved');btn.textContent='💾 儲存清單';}, 2000);
+  showToast(`✅ 自選清單已儲存（${tickers.split(',').length} 支股票）`);
+}
+
+function loadSavedWatchlist(){
+  const saved = localStorage.getItem(LS_WATCHLIST);
+  const savedPe = localStorage.getItem(LS_PE);
+  if(saved){
+    $('tks-inp').value = saved;
+    if(savedPe){
+      $('pe-range').value = savedPe;
+      $('pe-val').textContent = savedPe;
+    }
+    $('saved-hint').style.display='inline';
+    // Switch group selector to "自選觀察清單"
+    const gs=$('grp-sel');
+    if(gs) gs.value='📝 自選觀察清單';
+    return true;
+  }
+  return false;
+}
+
 function init(){
   syncKeys();bindKeys();bindEyes();
 
@@ -1268,6 +1322,18 @@ function init(){
   $('tks-inp').value=fp.c;$('pe-range').value=fp.p;$('pe-val').textContent=fp.p;
 
   $('pe-range').addEventListener('input',e=>$('pe-val').textContent=e.target.value);
+
+  // Save button
+  $('save-btn').addEventListener('click', saveWatchlist);
+
+  // Auto-save on tickers change (mark as unsaved when modified)
+  $('tks-inp').addEventListener('input',()=>{
+    $('saved-hint').style.display='none';
+  });
+
+  // Load saved watchlist on startup (overrides preset default if saved)
+  loadSavedWatchlist();
+
   $('run-btn').addEventListener('click',runAnalysis);
 
   document.querySelectorAll('.hn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
@@ -1290,5 +1356,6 @@ function init(){
 
 init();
 </script>
+<div id="toast"></div>
 </body>
 </html>
